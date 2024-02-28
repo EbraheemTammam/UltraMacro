@@ -96,7 +96,7 @@ async def update_regulations(
         values({**regulation.dict()}).
         returning(regulation_models.Regulation)
 	)
-	regulation = query.scalar_one()
+	regulation = query.scalar()
 	if not regulation:
 		raise HTTPException(
 		detail="no regulation with given id",
