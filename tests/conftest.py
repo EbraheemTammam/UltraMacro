@@ -1,44 +1,44 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from main import app
-from authentication.oath2 import create_access_token
+from authentication.oauth2 import create_access_token
 from models import Base
-from database.client import get_db
-from config import settings
+from database.client import get_async_db
 
 
-engine = create_engine(
-	settings.DATABASE_URL + '_test',
-# connect_args={check_same_thread: False} # uncomment if using sqlite
+async_engine = create_async_engine(
+	'sqlite+aiosqlite:///test_db.sqlite3',
+	connect_args={'check_same_thread': False}, # uncomment if using sqlite
 )
 
-SessionLocal = sessionmaker(
+AsyncSessionLocal = sessionmaker(
+	async_engine,
 	autocommit=False,
 	autoflush=False,
-	bind=engine
+	class_=AsyncSession,
+	expire_on_commit=False,
 )
 
-@pytest.fixture(scope='function')
-def session():
-	db = SessionLocal()
-	Base.metadata.drop_all(bind=engine)
-	Base.metadata.create_all(bind=engine)
-	try:
-		yield db
-	finally:
-		db.close()
 
 @pytest.fixture(scope='function')
-def client(session):
-	def get_test_db():
-		try:
-			yield session
-		finally:
-			session.close()
-	app.dependency_overrides[get_db] = get_test_db
-	yield TestClient(app)
+def client():
+	async def get_test_db():
+		# async with async_engine.begin() as connection:
+		# 	connection.run_sync(Base.metadata.drop_all(bind=async_engine))
+		# 	connection.run_sync(Base.metadata.create_all(bind=async_engine))
+		async with AsyncSessionLocal() as db:
+			try:
+				yield db
+			except Exception as e:
+				await db.rollback()
+				raise e
+			finally:
+				await db.close()
+	app.dependency_overrides[get_async_db] = get_test_db
+	with TestClient(app) as client:
+		yield client
 
 @pytest.fixture
 def test_user(client):
