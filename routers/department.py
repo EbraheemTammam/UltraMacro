@@ -70,8 +70,9 @@ async def retreive_departments(
 			department_models.Department.id == id
 		)
 	)
-	if query:
-		return query.scalar_one_or_none()
+	department = query.scalar()
+	if department:
+		return department
 	raise HTTPException(
 		detail="no department with given id",
 		status_code=status.HTTP_404_NOT_FOUND
@@ -94,7 +95,7 @@ async def update_departments(
         values({**department.dict()}).
         returning(department_models.Department)
 	)
-	department = query.scalar_one()
+	department = query.scalar()
 	if not department:
 		raise HTTPException(
 		detail="no department with given id",
