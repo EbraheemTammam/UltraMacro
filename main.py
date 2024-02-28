@@ -22,3 +22,4 @@ app.add_middleware(
 
 app.include_router(routers.authentication_router, prefix='/auth', tags=['auth'])
 app.include_router(routers.regulation_router, prefix='/regulations', tags=['regulations'])
+app.include_router(routers.department_router, prefix='/departments', tags=['departments'])
