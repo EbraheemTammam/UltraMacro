@@ -1,3 +1,4 @@
 Pipfile*
 *cache*
 .env
+db.sqlite3
