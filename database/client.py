@@ -7,13 +7,13 @@ from config import settings
 
 engine = create_engine(
 	settings.DATABASE_URL,
-# connect_args={check_same_thread: False} # uncomment if using sqlite,
+	connect_args={'check_same_thread': False}, # uncomment if using sqlite,
 	future=True # for using the new async orm
 )
 
 async_engine = create_async_engine(
 	settings.ASYNC_DATABASE_URL,
-# connect_args={check_same_thread: False}, # uncomment if using sqlite,
+	connect_args={'check_same_thread': False}, # uncomment if using sqlite,
 	future=True # for using the new async orm
 )
 
@@ -23,7 +23,6 @@ SessionLocal = sessionmaker(
 	autoflush=False,
 	bind=engine,
 	future=True
-# for using the new async orm
 )
 
 AsyncSessionLocal = sessionmaker(
@@ -45,8 +44,7 @@ def get_db():
 		db.close()
 
 async def get_async_db():
-	async with AsyncSession() as db:
-		db = SessionLocal()
+	async with AsyncSessionLocal() as db:
 		try:
 			yield db
 		except Exception as e:
