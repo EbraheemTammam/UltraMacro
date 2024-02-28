@@ -8,18 +8,18 @@ origins = [
 ]
 
 app = FastAPI(
-	title = ,
-	description = ,
-	version = ,
-	terms_of_service = ,
+	title = 'GPAXL',
+	description = '',
+	version = '1.0',
+	terms_of_service = '',
 	contact = {
-		user: ,
-		url: ,
-		email: ,
+		'user': '',
+		'url': '',
+		'email': '',
 	},
 	license_info = {
-		name: ,
-		url: ,
+		'name': '',
+		'url': '',
 	}
 )
 app.add_middleware(
@@ -30,4 +30,5 @@ app.add_middleware(
 	allow_headers=['*']
 )
 
-app.include_router(routers.authentication_router, prefix='auth', tags=['auth'])
+app.include_router(routers.authentication_router, prefix='/auth', tags=['auth'])
+app.include_router(routers.regulation_router, prefix='/regulations', tags=['regulations'])
