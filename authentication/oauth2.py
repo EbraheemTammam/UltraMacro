@@ -1,4 +1,5 @@
-from typing import Annotated from fastapi import Depends, status, HTTPException
+from typing import Annotated 
+from fastapi import Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -38,7 +39,7 @@ def verify_access_token(token: str, credentials_exceoption):
 		raise credentials_exceoption
 	return schemas.TokenPayload(**payload)
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(get_db)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(get_async_db)]):
 	credentials_exceoption = HTTPException(
 		status_code=status.HTTP_401_UNAUTHORIZED,
 		detail='could not validate credentials',
