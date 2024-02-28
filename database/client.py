@@ -51,5 +51,5 @@ async def get_async_db():
 			await db.rollback()
 			raise e
 		finally:
-			db.close()
+			await db.close()
 
