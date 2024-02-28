@@ -12,3 +12,4 @@ class Regulation(Base):
     
     id = Column(Integer, primary_key=True, index=True, nullable=False)
     name = Column(String(250), nullable=False)
+    max_gpa = Column(Integer, nullable=False)
