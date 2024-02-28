@@ -9,18 +9,8 @@ origins = [
 
 app = FastAPI(
 	title = 'GPAXL',
-	description = '',
+	description = 'server side APIs for gpaxl project',
 	version = '1.0',
-	terms_of_service = '',
-	contact = {
-		'user': '',
-		'url': '',
-		'email': '',
-	},
-	license_info = {
-		'name': '',
-		'url': '',
-	}
 )
 app.add_middleware(
 	CORSMiddleware,
