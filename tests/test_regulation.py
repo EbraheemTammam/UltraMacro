@@ -26,9 +26,10 @@ async def test_get_all_regulations(client):
 
 
 @pytest.mark.asyncio
-async def test_get_regulation(client):
+async def test_get_regulation(client, test_create_regulation):
+    regulation = await test_create_regulation
     res = client.get(
-        '/regulations/1',
+        f'/regulations/{regulation["id"]}',
     )
     assert res.status_code == 200
     res = client.get(
