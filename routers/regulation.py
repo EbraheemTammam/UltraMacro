@@ -71,8 +71,9 @@ async def retreive_regulations(
 			regulation_models.Regulation.id == id
 		)
 	)
-	if query:
-		return query.scalar_one_or_none()
+	regulation = query.scalar()
+	if regulation:
+		return regulation
 	raise HTTPException(
 		detail="no regulation with given id",
 		status_code=status.HTTP_404_NOT_FOUND
@@ -86,7 +87,7 @@ async def retreive_regulations(
 )
 async def update_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be updated')],
-	regulation: regulation_schemas.Regulation,
+	regulation: regulation_schemas.RegulationCreate,
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
 	query = await db.execute(
@@ -95,12 +96,12 @@ async def update_regulations(
         values({**regulation.dict()}).
         returning(regulation_models.Regulation)
 	)
-	if not query.scalar():
+	regulation = query.scalar_one()
+	if not regulation:
 		raise HTTPException(
 		detail="no regulation with given id",
 		status_code=status.HTTP_404_NOT_FOUND
 	)
-	regulation = query.scalar_one()
 	await db.commit()
 	await db.refresh(regulation)
 	return regulation
