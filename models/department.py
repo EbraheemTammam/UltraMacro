@@ -23,5 +23,3 @@ class Department(Base):
 
 	id = Column(Integer, primary_key=True, index=True, nullable=False)
 	name = Column(String(250), nullable=False)
-
-	divisions = relationship("Division")

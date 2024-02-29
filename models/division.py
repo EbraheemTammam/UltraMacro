@@ -43,5 +43,11 @@ class Division(Base):
 	)
 
 	regulation = relationship("Regulation", back_populates="divisions")
-	department_1 = relationship("Department", back_populates="divisions")
-	department_2 = relationship("Department", back_populates="divisions")
+	department_1 = relationship(
+		"Department", 
+		foreign_keys=[department_1_id]
+	)
+	department_2 = relationship(
+		"Department", 
+		foreign_keys=[department_2_id]
+	)
