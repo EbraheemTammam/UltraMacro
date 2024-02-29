@@ -4,3 +4,5 @@ from .department import department_router
 
 from .division import division_router
 
+from .user import user_router
+
