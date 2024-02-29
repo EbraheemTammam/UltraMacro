@@ -137,7 +137,12 @@ async def update_divisions(
 		update(division_models.Division).
         where(division_models.Division.id == id).
         values({**division.dict()}).
-        returning(division_models.Division)
+        returning(division_models.Division).
+		options(
+			selectinload(division_models.Division.regulation),
+			selectinload(division_models.Division.department_1),
+			selectinload(division_models.Division.department_2),
+		)
 	)
 	division = query.scalar()
 	if not division:
