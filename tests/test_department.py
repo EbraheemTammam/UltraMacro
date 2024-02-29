@@ -1,9 +1,8 @@
 import pytest
 
 
-@pytest.mark.asyncio
 @pytest.fixture
-async def test_create_department(client):
+def test_create_department(client):
     res = client.post(
         '/departments',
         json={
@@ -15,17 +14,15 @@ async def test_create_department(client):
     return res.json()
 
 
-@pytest.mark.asyncio
-async def test_get_all_departments(client):
+def test_get_all_departments(client):
     res = client.get(
         '/departments',
     )
     assert res.status_code == 200
 
 
-@pytest.mark.asyncio
-async def test_get_department(client, test_create_department):
-    department = await test_create_department
+def test_get_department(client, test_create_department):
+    department = test_create_department
     res = client.get(
         f'/departments/{department["id"]}',
     )
@@ -36,9 +33,8 @@ async def test_get_department(client, test_create_department):
     assert res.status_code == 404
 
 
-@pytest.mark.asyncio
-async def test_update_department(client, test_create_department):
-    department = await test_create_department
+def test_update_department(client, test_create_department):
+    department = test_create_department
     department['name'] = "updated department"
     res = client.put(
         f'/departments/{department["id"]}',
@@ -53,9 +49,8 @@ async def test_update_department(client, test_create_department):
     assert res.status_code == 404
 
 
-@pytest.mark.asyncio
-async def test_delete_department(client, test_create_department):
-    department = await test_create_department
+def test_delete_department(client, test_create_department):
+    department = test_create_department
     res = client.delete(
         f'/departments/{department["id"]}',
     )

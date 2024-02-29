@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from main import app
@@ -7,6 +8,11 @@ from authentication.oauth2 import create_access_token
 from models import Base
 from database.client import get_async_db
 
+
+engine = create_engine(
+	'sqlite:///test_db.sqlite3',
+	connect_args={'check_same_thread': False}, # uncomment if using sqlite
+)
 
 async_engine = create_async_engine(
 	'sqlite+aiosqlite:///test_db.sqlite3',
@@ -24,10 +30,9 @@ AsyncSessionLocal = sessionmaker(
 
 @pytest.fixture(scope='function')
 def client():
+	Base.metadata.drop_all(bind=engine)
+	Base.metadata.create_all(bind=engine)
 	async def get_test_db():
-		# async with async_engine.begin() as connection:
-		# 	connection.run_sync(Base.metadata.drop_all(bind=async_engine))
-		# 	connection.run_sync(Base.metadata.create_all(bind=async_engine))
 		async with AsyncSessionLocal() as db:
 			try:
 				yield db
