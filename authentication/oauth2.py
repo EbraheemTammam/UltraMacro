@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from config import settings
-from database.client import get_async_db
+from database import get_async_db
 import models
 import schemas
 
