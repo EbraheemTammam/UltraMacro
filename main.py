@@ -25,3 +25,4 @@ app.include_router(routers.regulation_router, prefix='/regulations', tags=['regu
 app.include_router(routers.department_router, prefix='/departments', tags=['departments'])
 app.include_router(routers.division_router, prefix='/divisions', tags=['divisions'])
 app.include_router(routers.user_router, prefix='/users', tags=['users'])
+app.include_router(routers.course_router, prefix='/courses', tags=['courses'])
