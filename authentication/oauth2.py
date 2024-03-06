@@ -37,7 +37,7 @@ def verify_access_token(token: str, credentials_exceoption):
 			raise credentials_exceoption
 	except JWTError:
 		raise credentials_exceoption
-	return schemas.TokenPayload(**payload)
+	return schemas.authentication.TokenPayload(**payload)
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(get_async_db)]):
 	credentials_exceoption = HTTPException(
