@@ -1,8 +1,5 @@
 import pytest
 
-from .test_regulation import test_create_regulation
-from .test_department import test_create_department
-
 
 @pytest.fixture
 def test_create_course(client):
