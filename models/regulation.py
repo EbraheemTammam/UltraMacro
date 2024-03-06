@@ -5,7 +5,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from database.client import Base
+from database import Base
 
 
 class Regulation(Base):

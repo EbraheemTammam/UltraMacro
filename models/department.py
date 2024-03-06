@@ -15,7 +15,7 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text, null
 from sqlalchemy_utils import EmailType, URLType
 
-from database.client import Base
+from database import Base
 
 
 class Department(Base):
