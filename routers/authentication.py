@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from authentication.oauth2 import create_access_token
+from authentication.oauth2 import create_access_token, verify_access_token
 from authentication.utils import verify_password
 from database import get_db, get_async_db
 import schemas.authentication as auth_schemas
@@ -28,12 +28,13 @@ authentication_router = APIRouter()
     response_model=auth_schemas.Token,
 )
 async def login(
-    credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
+    #credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
+	credentials: auth_schemas.Login,
     db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
 	query = await db.execute(
 		select(user_models.User).
-		where(user_models.User.email == credentials.username)
+		where(user_models.User.email == credentials.email)
 	)
 	user = query.scalar()
 	e = HTTPException(
@@ -42,5 +43,23 @@ async def login(
 	)
 	if not user or credentials.password != user.password:
 		raise e
-	token = create_access_token(payload={"user_id": str(user.id)})
-	return {"token_type": "bearer", "token": token}
+	token = create_access_token(
+		payload={
+			"user_id": str(user.id),
+			"is_admin": user.is_admin
+		}
+	)
+	return {"token_type": "bearer", "accessToken": token}
+
+
+@authentication_router.post(
+	'/login/verify'
+)
+async def verify(accessToken: auth_schemas.Verify):
+	credentials_exceoption = HTTPException(
+		status_code=status.HTTP_401_UNAUTHORIZED,
+		detail='could not validate credentials',
+		headers={'WWW-Authenticate': 'Bearer'}
+	)
+	token = verify_access_token(accessToken.accessToken, credentials_exceoption)
+	return {"key": accessToken.accessToken, "user": token}
