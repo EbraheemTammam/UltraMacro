@@ -20,10 +20,10 @@ app.add_middleware(
 	allow_headers=['*']
 )
 
-app.include_router(routers.authentication_router, prefix='/auth', tags=['auth'])
+app.include_router(routers.authentication_router, prefix='/accounts', tags=['auth'])
 app.include_router(routers.regulation_router, prefix='/regulations', tags=['regulations'])
 app.include_router(routers.department_router, prefix='/departments', tags=['departments'])
 app.include_router(routers.division_router, prefix='/divisions', tags=['divisions'])
-app.include_router(routers.user_router, prefix='/users', tags=['users'])
+app.include_router(routers.user_router, prefix='/accounts', tags=['users'])
 app.include_router(routers.course_router, prefix='/courses', tags=['courses'])
 app.include_router(routers.student_router, prefix='/students', tags=['students'])
