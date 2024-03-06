@@ -27,6 +27,9 @@ def test_get_department(client, test_create_department):
         f'/departments/{department["id"]}',
     )
     assert res.status_code == 200
+
+
+def test_get_non_existing_department(client):
     res = client.get(
         '/departments/1000',
     )
@@ -42,9 +45,12 @@ def test_update_department(client, test_create_department):
     )
     assert res.status_code == 200
     assert res.json()['name'] == "updated department"
+
+
+def test_update_non_existing_department(client):
     res = client.put(
         '/departments/1000',
-        json=department
+        json={'name': 'updated'}
     )
     assert res.status_code == 404
 
@@ -55,6 +61,9 @@ def test_delete_department(client, test_create_department):
         f'/departments/{department["id"]}',
     )
     assert res.status_code == 204
+
+
+def test_delete_non_existing_department(client):
     res = client.delete(
         '/departments/1000',
     )

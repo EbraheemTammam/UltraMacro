@@ -45,6 +45,9 @@ def test_get_division(client, test_create_division):
         f'/divisions/{division["id"]}',
     )
     assert res.status_code == 200
+
+
+def test_get_non_existing_division(client):
     res = client.get(
         '/divisions/1000',
     )
@@ -55,14 +58,16 @@ def test_update_division(client, test_create_division, test_create_regulation, t
     regulation = test_create_regulation
     department_1 = test_create_department
     department_2 = test_create_department
-    division = test_create_division
-    division['name'] = "updated division"
-    division["hours"] = 142
-    division["private"] = False
-    division["group"] = False
-    division["regulation_id"] = regulation["id"]
-    division["department_1_id"] = department_1["id"]
-    division["department_2_id"] = department_2["id"]
+    division = {
+        **test_create_division,
+        'name': "updated division",
+        "hours": 142,
+        "private": False,
+        "group": False,
+        "regulation_id": regulation["id"],
+        "department_1_id": department_1["id"],
+        "department_2_id": department_2["id"]
+    }
     res = client.put(
         f'/divisions/{division["id"]}',
         json=division
@@ -75,6 +80,18 @@ def test_update_division(client, test_create_division, test_create_regulation, t
     assert res.json()["regulation"]["id"] == regulation["id"]
     assert res.json()["department_1"]["id"] == department_1["id"]
     assert res.json()["department_2"]["id"] == department_2["id"]
+
+
+def test_update_non_exisitng_division(client):
+    division = {
+        'name': "updated division",
+        "hours": 142,
+        "private": False,
+        "group": False,
+        "regulation_id": 1,
+        "department_1_id": 1,
+        "department_2_id": 2
+    }
     res = client.put(
         '/divisions/1000',
         json=division
@@ -88,6 +105,9 @@ def test_delete_division(client, test_create_division):
         f'/divisions/{division["id"]}',
     )
     assert res.status_code == 204
+
+
+def test_delete_non_exisitng_division(client):
     res = client.delete(
         '/divisions/1000',
     )
