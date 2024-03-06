@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
-from database.client import get_db, get_async_db
+from database import get_db, get_async_db
 import schemas.division as division_schemas
 import models.division as division_models
 import models.regulation as regulation_models
