@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
-from database.client import get_db, get_async_db
+from database import get_db, get_async_db
 import schemas.user as user_schemas
 import models.user as user_models
 
@@ -46,6 +46,15 @@ async def create_users(
 	user: user_schemas.UserCreate,
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
+	check_user = await db.execute(
+		select(user_models.User).
+		where(user_models.User.email == user.email)
+	)
+	if check_user.scalar():
+		raise HTTPException(
+			detail="Email already exists",
+			status_code=status.HTTP_403_FORBIDDEN
+		)
 	query = await db.execute(
 		insert(user_models.User).
 		values(**user.dict()).
