@@ -1,61 +1,35 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+
+
 from main import app
 from authentication.oauth2 import create_access_token
 from models import Base
-from database.client import get_async_db
+from database import test_engine, get_test_db, get_async_db
 
-
-engine = create_engine(
-	'sqlite:///test_db.sqlite3',
-	connect_args={'check_same_thread': False}, # uncomment if using sqlite
-)
-
-async_engine = create_async_engine(
-	'sqlite+aiosqlite:///test_db.sqlite3',
-	connect_args={'check_same_thread': False}, # uncomment if using sqlite
-)
-
-AsyncSessionLocal = sessionmaker(
-	async_engine,
-	autocommit=False,
-	autoflush=False,
-	class_=AsyncSession,
-	expire_on_commit=False,
-)
 
 
 @pytest.fixture(scope='function')
 def client():
-	Base.metadata.drop_all(bind=engine)
-	Base.metadata.create_all(bind=engine)
-	async def get_test_db():
-		async with AsyncSessionLocal() as db:
-			try:
-				yield db
-			except Exception as e:
-				await db.rollback()
-				raise e
-			finally:
-				await db.close()
+	Base.metadata.drop_all(bind=test_engine)
+	Base.metadata.create_all(bind=test_engine)
+	
 	app.dependency_overrides[get_async_db] = get_test_db
 	with TestClient(app) as client:
 		yield client
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def test_user(client):
 	user_data = {
-	 'email': 'email@example.com',
-	 'first_name': 'eepy',
-	 'last_name': 'sleepy',
-	 'password': 'password'
+		'email': 'email@example.com',
+		'first_name': 'eepy',
+		'last_name': 'sleepy',
+		'password': 'password',
+		'is_admin': True
 	}
 	res = client.post(
-	 'http://localhost:8000/users',
-	 data=user_data
+		'http://localhost:8000/users',
+		json=user_data
 	)
 	assert res.status_code == 201
 	user = res.json()
