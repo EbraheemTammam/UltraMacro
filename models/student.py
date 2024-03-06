@@ -51,3 +51,4 @@ class Student(Base):
 	
 	group = relationship('Division', foreign_keys=[group_id])
 	division = relationship('Division', foreign_keys=[division_id])
+	enrollments = relationship('Enrollment', back_populates='student')

@@ -4,3 +4,4 @@ from .division import Base
 from .user import Base
 from .course import Base
 from .student import Base
+from .enrollment import Base
