@@ -36,3 +36,7 @@ class Student(StudentBase):
 
     class Config:
         from_attributes = True
+
+class GrduateStudent(Student):
+    semester: int
+    year: int
