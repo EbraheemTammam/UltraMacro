@@ -82,15 +82,18 @@ def test_update_division(client, test_create_division, test_create_regulation, t
     assert res.json()["department_2"]["id"] == department_2["id"]
 
 
-def test_update_non_exisitng_division(client):
+def test_update_non_exisitng_division(client, test_create_regulation, test_create_department):
+    regulation = test_create_regulation
+    department_1 = test_create_department
+    department_2 = test_create_department
     division = {
         'name': "updated division",
         "hours": 142,
         "private": False,
         "group": False,
-        "regulation_id": 1,
-        "department_1_id": 1,
-        "department_2_id": 2
+        "regulation_id": regulation["id"],
+        "department_1_id": department_1["id"],
+        "department_2_id": department_2["id"]
     }
     res = client.put(
         '/divisions/1000',
