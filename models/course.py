@@ -31,3 +31,25 @@ class Course(Base):
     level = Column(Integer, nullable=False)
     semester = Column(Integer, nullable=False)
     required = Column(Boolean, nullable=False)
+
+    divisions = relationship("Division", secondary="CourseDivisions")
+
+
+
+class CourseDivisions(Base):
+	__tablename__ = 'course_divisions'
+
+	course_id = Column(
+		Integer,
+		ForeignKey("courses.id", ondelete="CASCADE"),
+		primary_key=True,
+		index=True,
+		nullable=False,
+	)
+	division_id = Column(
+		Integer,
+		ForeignKey("divisions.id", ondelete="CASCADE"),
+		primary_key=True,
+		index=True,
+		nullable=False,
+	)
