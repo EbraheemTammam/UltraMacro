@@ -36,3 +36,26 @@ class User(Base):
 		nullable=False
 	)
 	is_admin = Column(Boolean, nullable=False, default=False)
+
+	divisions = relationship("Division", secondary="UserDivisions")
+
+
+
+class UserDivisions(Base):
+	__tablename__ = 'user_divisions'
+
+	user_id = Column(
+		UUID(as_uuid=True),
+		ForeignKey("users.id", ondelete="CASCADE"),
+		primary_key=True,
+		index=True,
+		nullable=False,
+		default=uuid.uuid4
+	)
+	division_id = Column(
+		Integer,
+		ForeignKey("divisions.id", ondelete="CASCADE"),
+		primary_key=True,
+		index=True,
+		nullable=False,
+	)
