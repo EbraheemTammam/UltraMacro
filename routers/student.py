@@ -49,6 +49,33 @@ async def get_students(db: Annotated[AsyncSession, Depends(get_async_db)]):
 	)
     return query.scalars().all()
 
+#	get all graduate students
+@student_router.get(
+	'/graduates',
+    response_model=List[student_schemas.Student],
+    status_code=status.HTTP_200_OK
+)
+async def get_graduate_students(db: Annotated[AsyncSession, Depends(get_async_db)]):
+    query = await db.execute(
+        select(student_models.Student).
+		where(student_models.Student.graduate == True).
+		options(
+			selectinload(student_models.Student.group).
+			options(
+				selectinload(division_models.Division.regulation),
+				selectinload(division_models.Division.department_1),
+				selectinload(division_models.Division.department_2),
+			),
+			selectinload(student_models.Student.division).
+			options(
+				selectinload(division_models.Division.regulation),
+				selectinload(division_models.Division.department_1),
+				selectinload(division_models.Division.department_2),
+			)
+		)
+	)
+    return query.scalars().all()
+
 
 #	create student
 @student_router.post(
