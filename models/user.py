@@ -1,6 +1,7 @@
 import uuid
 import enum
 from sqlalchemy import (
+	Table,
 	Column,
 	Integer,
 	String,
@@ -37,25 +38,27 @@ class User(Base):
 	)
 	is_admin = Column(Boolean, nullable=False, default=False)
 
-	divisions = relationship("Division", secondary="UserDivisions")
+	divisions = relationship("Division", secondary="UserDivision")
 
 
-
-class UserDivisions(Base):
-	__tablename__ = 'user_divisions'
-
-	user_id = Column(
+UserDivision = Table(
+	'user_divisions', 
+	Base.metadata,
+    Column(
+		'user_id',
 		UUID(as_uuid=True),
 		ForeignKey("users.id", ondelete="CASCADE"),
 		primary_key=True,
 		index=True,
 		nullable=False,
 		default=uuid.uuid4
-	)
-	division_id = Column(
+	),
+    Column(
+		'division_id',
 		Integer,
 		ForeignKey("divisions.id", ondelete="CASCADE"),
 		primary_key=True,
 		index=True,
 		nullable=False,
 	)
+)

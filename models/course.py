@@ -1,6 +1,7 @@
 import uuid
 import enum
 from sqlalchemy import (
+	Table,
 	Column,
 	Integer,
 	String,
@@ -36,20 +37,24 @@ class Course(Base):
 
 
 
-class CourseDivisions(Base):
-	__tablename__ = 'course_divisions'
-
-	course_id = Column(
-		Integer,
+CourseDivision = Table(
+	'course_divisions', 
+	Base.metadata,
+    Column(
+		'course_id',
+		UUID(as_uuid=True),
 		ForeignKey("courses.id", ondelete="CASCADE"),
 		primary_key=True,
 		index=True,
 		nullable=False,
-	)
-	division_id = Column(
+		default=uuid.uuid4
+	),
+    Column(
+		'division_id',
 		Integer,
 		ForeignKey("divisions.id", ondelete="CASCADE"),
 		primary_key=True,
 		index=True,
 		nullable=False,
 	)
+)
