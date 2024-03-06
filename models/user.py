@@ -19,29 +19,8 @@ from sqlalchemy_utils import EmailType, URLType, PasswordType
 from database import Base
 
 
-class User(Base):
-	__tablename__ = 'users'
-    
-	id = Column(
-		UUID(as_uuid=True),
-		primary_key=True,
-		index=True,
-		default=uuid.uuid4,
-		nullable=False
-	)
-	first_name = Column(String(50), nullable=False)
-	last_name = Column(String(50), nullable=False)
-	email = Column(EmailType, unique=True, nullable=False)
-	password = Column(
-		PasswordType(schemes=['bcrypt'], deprecated="auto"),
-		nullable=False
-	)
-	is_admin = Column(Boolean, nullable=False, default=False)
 
-	divisions = relationship("Division", secondary="UserDivision")
-
-
-UserDivision = Table(
+UserDivisions = Table(
 	'user_divisions', 
 	Base.metadata,
     Column(
@@ -62,3 +41,24 @@ UserDivision = Table(
 		nullable=False,
 	)
 )
+
+class User(Base):
+	__tablename__ = 'users'
+    
+	id = Column(
+		UUID(as_uuid=True),
+		primary_key=True,
+		index=True,
+		default=uuid.uuid4,
+		nullable=False
+	)
+	first_name = Column(String(50), nullable=False)
+	last_name = Column(String(50), nullable=False)
+	email = Column(EmailType, unique=True, nullable=False)
+	password = Column(
+		PasswordType(schemes=['bcrypt'], deprecated="auto"),
+		nullable=False
+	)
+	is_admin = Column(Boolean, nullable=False, default=False)
+
+	divisions = relationship("Division", secondary=UserDivisions)
