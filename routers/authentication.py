@@ -15,7 +15,7 @@ from sqlalchemy.future import select
 
 from authentication.oauth2 import create_access_token
 from authentication.utils import verify_password
-from database.client import get_db, get_async_db
+from database import get_db, get_async_db
 import schemas.authentication as auth_schemas
 import models.user as user_models
 
