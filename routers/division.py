@@ -70,15 +70,16 @@ async def create_divisions(
 			detail=f"no department with given id: {division.department_1_id}",
 			status_code=status.HTTP_400_BAD_REQUEST
 		)
-	department_2 = await db.execute(
-		select(department_models.Department).
-		where(department_models.Department.id == division.department_2_id)
-	)
-	if not department_2.scalar():
-		raise HTTPException(
-			detail=f"no department with given id: {division.department_2_id}",
-			status_code=status.HTTP_400_BAD_REQUEST
+	if division.department_2_id:
+		department_2 = await db.execute(
+			select(department_models.Department).
+			where(department_models.Department.id == division.department_2_id)
 		)
+		if not department_2.scalar():
+			raise HTTPException(
+				detail=f"no department with given id: {division.department_2_id}",
+				status_code=status.HTTP_400_BAD_REQUEST
+			)
 	query = await db.execute(
 		insert(division_models.Division).
 		values(**division.dict()).
@@ -133,6 +134,34 @@ async def update_divisions(
 	division: division_schemas.DivisionCreate,
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
+	regulation = await db.execute(
+		select(regulation_models.Regulation).
+		where(regulation_models.Regulation.id == division.regulation_id)
+	)
+	if not regulation.scalar():
+		raise HTTPException(
+			detail=f"no regulation with given id: {division.regulation_id}",
+			status_code=status.HTTP_400_BAD_REQUEST
+		)
+	department_1 = await db.execute(
+		select(department_models.Department).
+		where(department_models.Department.id == division.department_1_id)
+	)
+	if not department_1.scalar():
+		raise HTTPException(
+			detail=f"no department with given id: {division.department_1_id}",
+			status_code=status.HTTP_400_BAD_REQUEST
+		)
+	if division.department_2_id:
+		department_2 = await db.execute(
+			select(department_models.Department).
+			where(department_models.Department.id == division.department_2_id)
+		)
+		if not department_2.scalar():
+			raise HTTPException(
+				detail=f"no department with given id: {division.department_2_id}",
+				status_code=status.HTTP_400_BAD_REQUEST
+			)
 	query = await db.execute(
 		update(division_models.Division).
         where(division_models.Division.id == id).
