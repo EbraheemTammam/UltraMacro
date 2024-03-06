@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Optional
 from pydantic import BaseModel
 from schemas.regulation import Regulation
 from schemas.department import Department
@@ -12,8 +12,8 @@ class DivisionBase(BaseModel):
 
 class DivisionCreate(DivisionBase):
     regulation_id: int
-    department_1_id: int | None
-    department_2_id: int | None
+    department_1_id: Optional[int] | None
+    department_2_id: Optional[int] | None
 
 class Division(DivisionBase):
     id: int
