@@ -18,8 +18,6 @@ from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.student as student_schemas
 import models.student as student_models
-import models.regulation as regulation_models
-import models.department as department_models
 import models.division as division_models
 
 
