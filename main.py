@@ -26,3 +26,4 @@ app.include_router(routers.department_router, prefix='/departments', tags=['depa
 app.include_router(routers.division_router, prefix='/divisions', tags=['divisions'])
 app.include_router(routers.user_router, prefix='/users', tags=['users'])
 app.include_router(routers.course_router, prefix='/courses', tags=['courses'])
+app.include_router(routers.student_router, prefix='/students', tags=['students'])
