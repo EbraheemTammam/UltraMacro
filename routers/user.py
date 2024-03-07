@@ -17,8 +17,11 @@ from sqlalchemy.future import select
 from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.user as user_schemas
-import models.user as user_models
-import models.division as division_models
+from models import (
+    user as user_models,
+	division as division_models,
+)
+import handlers.user as user_handlers
 
 
 user_router = APIRouter()
@@ -34,18 +37,7 @@ async def get_users(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    query = await db.execute(
-        select(user_models.User).
-		options(
-			selectinload(user_models.User.divisions).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-    return query.scalars().all()
+    return await user_handlers.get_all_users(db)
 
 
 #	create user
@@ -57,34 +49,9 @@ async def get_users(
 async def create_users(
 	user: user_schemas.UserCreate,
 	db: Annotated[AsyncSession, Depends(get_async_db)],
-	current_user: Annotated[user_models.User, Depends(get_current_user)]
+	#current_user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	check_user = await db.execute(
-		select(user_models.User).
-		where(user_models.User.email == user.email)
-	)
-	if check_user.scalar():
-		raise HTTPException(
-			detail="Email already exists",
-			status_code=status.HTTP_403_FORBIDDEN
-		)
-	query = await db.execute(
-		insert(user_models.User).
-		values(**user.dict()).
-		returning(user_models.User).
-		options(
-			selectinload(user_models.User.divisions).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-	user = query.scalar_one()
-	await db.commit()
-	await db.refresh(user)
-	return user
+	return await user_handlers.create_user(user, db)
 
 
 #	get one user
@@ -98,26 +65,7 @@ async def retreive_users(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(user_models.User).where(
-			user_models.User.id == id
-		).
-		options(
-			selectinload(user_models.User.divisions).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-	user = query.scalar()
-	if user:
-		return user
-	raise HTTPException(
-		detail="no user with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
+	return await user_handlers.get_one_user(id, db)
 
 
 #	update user
@@ -131,38 +79,7 @@ async def update_users(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	current_user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	check_user = await db.execute(
-		select(user_models.User).
-		where(user_models.User.email == user.email)
-	)
-	if check_user.scalar():
-		raise HTTPException(
-			detail="Email already exists",
-			status_code=status.HTTP_403_FORBIDDEN
-		)
-	query = await db.execute(
-		update(user_models.User).
-        where(user_models.User.id == id).
-        values({**user.dict()}).
-        returning(user_models.User).
-		options(
-			selectinload(user_models.User.divisions).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-	user = query.scalar()
-	if not user:
-		raise HTTPException(
-		detail="no user with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
-	await db.commit()
-	await db.refresh(user)
-	return user
+	return await user_handlers.update_user(id, user, db)
 
 
 #	delete user
@@ -175,19 +92,4 @@ async def delete_users(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(user_models.User).where(
-			user_models.User.id == id
-		)
-	)
-	if not query.scalar():
-		raise HTTPException(
-			detail="no user with given id",
-			status_code=status.HTTP_404_NOT_FOUND
-		)
-	query = await db.execute(
-		delete(user_models.User).
-        where(user_models.User.id == id)
-	)
-	await db.commit()
-	return
+	return await user_handlers.delete_user(id, db)
