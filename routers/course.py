@@ -61,7 +61,7 @@ async def retreive_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return course_handlers.get_one_course(id, db)
+	return await course_handlers.get_one_course(id, db)
 
 
 #	update course
@@ -88,5 +88,5 @@ async def delete_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return course_handlers.delete_course(id, db)
+	return await course_handlers.delete_course(id, db)
 	
