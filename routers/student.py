@@ -22,6 +22,7 @@ from models import (
 	student as student_models,
 	division as division_models
 )
+import handlers.student as student_handlers
 
 student_router = APIRouter()
 
@@ -35,24 +36,7 @@ async def get_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    query = await db.execute(
-        select(student_models.Student).
-		options(
-			selectinload(student_models.Student.group).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			),
-			selectinload(student_models.Student.division).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-    return query.scalars().all()
+    return student_handlers.get_all_students(db)
 
 #	get all graduate students
 @student_router.get(
@@ -64,25 +48,7 @@ async def get_graduate_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    query = await db.execute(
-        select(student_models.Student).
-		where(student_models.Student.graduate == True).
-		options(
-			selectinload(student_models.Student.group).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			),
-			selectinload(student_models.Student.division).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-    return query.scalars().all()
+    return student_handlers.get_all_students(db=db, graduate=True)
 
 
 #	create student
@@ -96,62 +62,7 @@ async def create_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	group = await db.execute(
-		select(division_models.Division).
-		where(division_models.Division.id == student.group_id)
-	)
-	if not group.scalar():
-		raise HTTPException(
-			detail=f"no group with given id: {student.group_id}",
-			status_code=status.HTTP_400_BAD_REQUEST
-		)
-	if student.division_id:
-		division = await db.execute(
-			select(division_models.Division).
-			where(division_models.Division.id == student.division_id).
-			options(
-				selectinload(student_models.Student.group).
-				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
-				),
-				selectinload(student_models.Student.division).
-				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
-				)
-			)
-		)
-		if not division.scalar():
-			raise HTTPException(
-				detail=f"no division with given id: {student.division_id}",
-				status_code=status.HTTP_400_BAD_REQUEST
-			)
-	query = await db.execute(
-		insert(student_models.Student).
-		values(**student.dict()).
-		returning(student_models.Student).
-		options(
-			selectinload(student_models.Student.group).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			),
-			selectinload(student_models.Student.division).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-	student = query.scalar_one()
-	await db.commit()
-	await db.refresh(student)
-	return student
+	return await student_handlers.create_student(student, db)
 
 
 #	get one student
@@ -165,32 +76,7 @@ async def retreive_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(student_models.Student).where(
-			student_models.Student.id == id
-		).
-		options(
-			selectinload(student_models.Student.group).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			),
-			selectinload(student_models.Student.division).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-	student = query.scalar()
-	if student:
-		return student
-	raise HTTPException(
-		detail="no student with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
+	return await student_handlers.get_one_student(id, db)
 
 
 #	update student
@@ -204,54 +90,7 @@ async def update_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	group = await db.execute(
-		select(division_models.Division).
-		where(division_models.Division.id == student.group_id)
-	)
-	if not group.scalar():
-		raise HTTPException(
-			detail=f"no group with given id: {student.group_id}",
-			status_code=status.HTTP_400_BAD_REQUEST
-		)
-	if student.division_id:
-		division = await db.execute(
-			select(division_models.Division).
-			where(division_models.Division.id == student.division_id)
-		)
-		if not division.scalar():
-			raise HTTPException(
-				detail=f"no division with given id: {student.division_id}",
-				status_code=status.HTTP_400_BAD_REQUEST
-			)
-	query = await db.execute(
-		update(student_models.Student).
-        where(student_models.Student.id == id).
-        values({**student.dict()}).
-        returning(student_models.Student).
-		options(
-			selectinload(student_models.Student.group).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			),
-			selectinload(student_models.Student.division).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
-	student = query.scalar()
-	if not student:
-		raise HTTPException(
-		detail="no student with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
-	await db.commit()
-	await db.refresh(student)
-	return student
+	return await student_handlers.update_student(id, student, db)
 
 
 #	delete student
@@ -264,19 +103,4 @@ async def delete_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(student_models.Student).where(
-			student_models.Student.id == id
-		)
-	)
-	if not query.scalar():
-		raise HTTPException(
-			detail="no student with given id",
-			status_code=status.HTTP_404_NOT_FOUND
-		)
-	query = await db.execute(
-		delete(student_models.Student).
-        where(student_models.Student.id == id)
-	)
-	await db.commit()
-	return
+	return await student_handlers.delete_student(id, db)
