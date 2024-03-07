@@ -13,7 +13,7 @@ from models import (
 from handlers import division as division_handlers
 
 
-def query():
+def main_query():
 	return (
 		select(student_models.Student).
 		options(
@@ -34,7 +34,7 @@ def query():
 
 
 async def get_all_students(db: AsyncSession, graduate: bool = False):
-	query = query()
+	query = main_query()
 	if graduate:
 		query = query.where(student_models.Student.graduate == True)
 	query = await db.execute(query)
@@ -73,7 +73,7 @@ async def create_student(student: student_schemas.StudentCreate, db: AsyncSessio
 
 async def get_one_student(id: UUID, db: AsyncSession):
 	student = await db.execute(
-		query().where(student_models.Student.id == id)
+		main_query().where(student_models.Student.id == id)
 	)
 	if student:
 		return student
@@ -120,7 +120,7 @@ async def update_student(id: UUID, student: student_schemas.StudentCreate, db: A
 
 async def delete_student(id: UUID, db: AsyncSession):
 	await get_one_student(id, db)
-	query = await db.execute(
+	await db.execute(
 		delete(student_models.Student).
         where(student_models.Student.id == id)
 	)
