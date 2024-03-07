@@ -3,12 +3,14 @@ from fastapi import Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from config import settings
 from database import get_async_db
-import models
+import models.user as user_models
+import models.division as division_models
 import schemas
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
@@ -47,7 +49,16 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: An
 	)
 	token = verify_access_token(token, credentials_exceoption)
 	user = await db.execute(
-		select(models.User).where(models.User.id==token.user_id)
+		select(user_models.User).
+		where(user_models.User.id==token.user_id).
+		options(
+			selectinload(user_models.User.divisions).
+			options(
+				selectinload(division_models.Division.regulation),
+				selectinload(division_models.Division.department_1),
+				selectinload(division_models.Division.department_2),
+			)
+		)
 	)
 	user = user.scalar_one()
 	return user
