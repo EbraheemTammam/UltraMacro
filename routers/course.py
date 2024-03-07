@@ -17,6 +17,7 @@ from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.course as course_schemas
 import models.course as course_models
+import models.user as user_models
 
 
 course_router = APIRouter()
@@ -27,7 +28,10 @@ course_router = APIRouter()
     response_model=List[course_schemas.Course],
     status_code=status.HTTP_200_OK
 )
-async def get_courses(db: Annotated[AsyncSession, Depends(get_async_db)]):
+async def get_courses(
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
+):
     query = await db.execute(
         select(course_models.Course)
 	)
@@ -42,7 +46,8 @@ async def get_courses(db: Annotated[AsyncSession, Depends(get_async_db)]):
 )
 async def create_courses(
 	course: course_schemas.CourseCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		insert(course_models.Course).
@@ -63,7 +68,8 @@ async def create_courses(
 )
 async def retreive_courses(
 	id: Annotated[int, Path(..., title='id of course to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(course_models.Course).where(
@@ -87,7 +93,8 @@ async def retreive_courses(
 async def update_courses(
 	id: Annotated[int, Path(..., title='id of course to be updated')],
 	course: course_schemas.CourseCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		update(course_models.Course).
@@ -113,7 +120,8 @@ async def update_courses(
 )
 async def delete_courses(
 	id: Annotated[int, Path(..., title='id of course to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(course_models.Course).where(

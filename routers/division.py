@@ -16,9 +16,12 @@ from sqlalchemy.future import select
 from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.division as division_schemas
-import models.division as division_models
-import models.regulation as regulation_models
-import models.department as department_models
+from models import (
+	division as division_models,
+	regulation as regulation_models,
+	department as department_models,
+	user as user_models
+)
 
 
 division_router = APIRouter()
@@ -30,7 +33,10 @@ division_router = APIRouter()
     response_model=List[division_schemas.Division],
     status_code=status.HTTP_200_OK
 )
-async def get_divisions(db: Annotated[AsyncSession, Depends(get_async_db)]):
+async def get_divisions(
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
+):
     query = await db.execute(
         select(division_models.Division).
 		options(
@@ -50,7 +56,8 @@ async def get_divisions(db: Annotated[AsyncSession, Depends(get_async_db)]):
 )
 async def create_divisions(
 	division: division_schemas.DivisionCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	regulation = await db.execute(
 		select(regulation_models.Regulation).
@@ -104,7 +111,8 @@ async def create_divisions(
 )
 async def retreive_divisions(
 	id: Annotated[int, Path(..., title='id of division to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(division_models.Division).
@@ -132,7 +140,8 @@ async def retreive_divisions(
 async def update_divisions(
 	id: Annotated[int, Path(..., title='id of division to be updated')],
 	division: division_schemas.DivisionCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	regulation = await db.execute(
 		select(regulation_models.Regulation).
@@ -191,7 +200,8 @@ async def update_divisions(
 )
 async def delete_divisions(
 	id: Annotated[int, Path(..., title='id of division to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(division_models.Division).where(

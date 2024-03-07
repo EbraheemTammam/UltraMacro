@@ -17,6 +17,7 @@ from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.department as department_schemas
 import models.department as department_models
+import models.user as user_models
 
 
 department_router = APIRouter()
@@ -27,7 +28,10 @@ department_router = APIRouter()
     response_model=List[department_schemas.Department],
     status_code=status.HTTP_200_OK
 )
-async def get_departments(db: Annotated[AsyncSession, Depends(get_async_db)]):
+async def get_departments(
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
+):
     query = await db.execute(
         select(department_models.Department)
 	)
@@ -42,7 +46,8 @@ async def get_departments(db: Annotated[AsyncSession, Depends(get_async_db)]):
 )
 async def create_departments(
 	department: department_schemas.DepartmentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		insert(department_models.Department).
@@ -63,7 +68,8 @@ async def create_departments(
 )
 async def retreive_departments(
 	id: Annotated[int, Path(..., title='id of department to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(department_models.Department).where(
@@ -87,7 +93,8 @@ async def retreive_departments(
 async def update_departments(
 	id: Annotated[int, Path(..., title='id of department to be updated')],
 	department: department_schemas.DepartmentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		update(department_models.Department).
@@ -113,7 +120,8 @@ async def update_departments(
 )
 async def delete_departments(
 	id: Annotated[int, Path(..., title='id of department to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(department_models.Department).where(

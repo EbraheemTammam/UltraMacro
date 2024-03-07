@@ -17,9 +17,11 @@ from sqlalchemy.future import select
 from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.student as student_schemas
-import models.student as student_models
-import models.division as division_models
-
+from models import (
+	user as user_models,
+	student as student_models,
+	division as division_models
+)
 
 student_router = APIRouter()
 
@@ -29,7 +31,10 @@ student_router = APIRouter()
     response_model=List[student_schemas.Student],
     status_code=status.HTTP_200_OK
 )
-async def get_students(db: Annotated[AsyncSession, Depends(get_async_db)]):
+async def get_students(
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
+):
     query = await db.execute(
         select(student_models.Student).
 		options(
@@ -55,7 +60,10 @@ async def get_students(db: Annotated[AsyncSession, Depends(get_async_db)]):
     response_model=List[student_schemas.Student],
     status_code=status.HTTP_200_OK
 )
-async def get_graduate_students(db: Annotated[AsyncSession, Depends(get_async_db)]):
+async def get_graduate_students(
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
+):
     query = await db.execute(
         select(student_models.Student).
 		where(student_models.Student.graduate == True).
@@ -85,7 +93,8 @@ async def get_graduate_students(db: Annotated[AsyncSession, Depends(get_async_db
 )
 async def create_students(
 	student: student_schemas.StudentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	group = await db.execute(
 		select(division_models.Division).
@@ -153,7 +162,8 @@ async def create_students(
 )
 async def retreive_students(
 	id: Annotated[UUID, Path(..., title='id of student to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(student_models.Student).where(
@@ -191,7 +201,8 @@ async def retreive_students(
 async def update_students(
 	id: Annotated[UUID, Path(..., title='id of student to be updated')],
 	student: student_schemas.StudentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	group = await db.execute(
 		select(division_models.Division).
@@ -250,7 +261,8 @@ async def update_students(
 )
 async def delete_students(
 	id: Annotated[UUID, Path(..., title='id of student to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(student_models.Student).where(
