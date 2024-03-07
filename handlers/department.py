@@ -6,17 +6,23 @@ from sqlalchemy.orm import selectinload
 
 
 import schemas.department as department_schemas
-import models.department as department_models
+from models import (
+    department as department_models,
+    user as user_models
+)
 
 
 
 
-
-async def get_all_departments(db: AsyncSession):
-    query = await db.execute(
-        select(department_models.Department)
-	)
-    return query.scalars().all()
+async def get_all_departments(user: user_models.User, db: AsyncSession):
+    query = select(department_models.Department)
+    if not user.is_admin:
+        query = query.where(
+            department_models.Department.main_divisions in user.divisions or
+            department_models.Department.secondary_divisions in user.divisions
+        )
+    divisions = await db.execute(query)
+    return divisions.scalars().all()
 
 
 async def create_department(department: department_schemas.DepartmentCreate, db: AsyncSession):
@@ -31,13 +37,18 @@ async def create_department(department: department_schemas.DepartmentCreate, db:
     return department
 
 
-async def get_one_department(id: int, db: AsyncSession):
-    query = await db.execute(
-    	select(department_models.Department).where(
-    		department_models.Department.id == id
-    	)
+async def get_one_department(id: int, user: user_models.User, db: AsyncSession):
+    query = (
+    	select(department_models.Department).
+        where(department_models.Department.id == id)
     )
-    department = query.scalar()
+    if not user.is_admin:
+        query = query.where(
+            department_models.Department.main_divisions in user.divisions or
+            department_models.Department.secondary_divisions in user.divisions
+        )
+    department = await db.execute(query)
+    department = department.scalar()
     if department:
         return department
     raise HTTPException(
@@ -46,14 +57,20 @@ async def get_one_department(id: int, db: AsyncSession):
     )
 
 
-async def update_department(id: int, department: department_schemas.DepartmentCreate, db: AsyncSession):
-    query = await db.execute(
+async def update_department(id: int, department: department_schemas.DepartmentCreate, user: user_models.User, db: AsyncSession):
+    query = (
     	update(department_models.Department).
         where(department_models.Department.id == id).
         values({**department.dict()}).
         returning(department_models.Department)
     )
-    department = query.scalar()
+    if not user.is_admin:
+        query = query.where(
+            department_models.Department.main_divisions in user.divisions or
+            department_models.Department.secondary_divisions in user.divisions
+        )
+    department = await db.execute(query)
+    department = department.scalar()
     if not department:
         raise HTTPException(
         detail="no department with given id",
@@ -64,8 +81,8 @@ async def update_department(id: int, department: department_schemas.DepartmentCr
     return department
 
 
-async def delete_department(id: int, db: AsyncSession):
-    await get_one_department(id, db)
+async def delete_department(id: int, user: user_models.User, db: AsyncSession):
+    await get_one_department(id, user, db)
     await db.execute(
     	delete(department_models.Department).
         where(department_models.Department.id == id)

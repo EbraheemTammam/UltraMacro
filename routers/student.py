@@ -36,7 +36,7 @@ async def get_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    return await student_handlers.get_all_students(db)
+    return await student_handlers.get_all_students(user, db)
 
 #	get all graduate students
 @student_router.get(
@@ -48,7 +48,7 @@ async def get_graduate_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    return await student_handlers.get_all_students(db=db, graduate=True)
+    return await student_handlers.get_all_students(db=db, user=user, graduate=True)
 
 
 #	create student
@@ -62,7 +62,7 @@ async def create_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.create_student(student, db)
+	return await student_handlers.create_student(student, user, db)
 
 
 #	get one student
@@ -76,7 +76,7 @@ async def retreive_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.get_one_student(id, db)
+	return await student_handlers.get_one_student(id, user, db)
 
 
 #	update student
@@ -90,7 +90,7 @@ async def update_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.update_student(id, student, db)
+	return await student_handlers.update_student(id, student, user, db)
 
 
 #	delete student
@@ -103,4 +103,4 @@ async def delete_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.delete_student(id, db)
+	return await student_handlers.delete_student(id, user, db)

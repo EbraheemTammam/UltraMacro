@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +9,11 @@ from sqlalchemy.orm import selectinload
 import schemas.user as user_schemas
 from models import (
     user as user_models,
+	regulation as regulation_models,
+	department as department_models,
     division as division_models,
+	course as course_models,
+	student as student_models
 )
 
 

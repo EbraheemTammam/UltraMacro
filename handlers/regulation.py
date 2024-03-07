@@ -6,17 +6,20 @@ from sqlalchemy.orm import selectinload
 
 
 import schemas.regulation as regulation_schemas
-import models.regulation as regulation_models
+from models import (
+    regulation as regulation_models,
+    user as user_models
+)
 
 
 
 
-
-async def get_all_regulations(db: AsyncSession):
-    query = await db.execute(
-        select(regulation_models.Regulation)
-	)
-    return query.scalars().all()
+async def get_all_regulations(user: user_models.User, db: AsyncSession):
+    query = select(regulation_models.Regulation)
+    if not user.is_admin:
+        query = query.where(regulation_models.Regulation.divisions in user.divisions)
+    regulations = await db.execute(query)
+    return regulations.scalars().all()
 
 
 async def create_regulation(regulation: regulation_schemas.RegulationCreate, db: AsyncSession):
@@ -31,12 +34,14 @@ async def create_regulation(regulation: regulation_schemas.RegulationCreate, db:
     return regulation
 
 
-async def get_one_regulation(id: int, db: AsyncSession):
-    query = await db.execute(
-    	select(regulation_models.Regulation).where(
-    		regulation_models.Regulation.id == id
-    	)
+async def get_one_regulation(id: int, user: user_models.User, db: AsyncSession):
+    query = (
+        select(regulation_models.Regulation).
+        where(regulation_models.Regulation.id == id)
     )
+    if not user.is_admin:
+        query = query.where(regulation_models.Regulation.divisions in user.divisions)
+    query = await db.execute(query)
     regulation = query.scalar()
     if regulation:
         return regulation
@@ -46,13 +51,16 @@ async def get_one_regulation(id: int, db: AsyncSession):
     )
 
 
-async def update_regulation(id: int, regulation: regulation_schemas.RegulationCreate, db: AsyncSession):
-    query = await db.execute(
+async def update_regulation(id: int, regulation: regulation_schemas.RegulationCreate, user: user_models.User, db: AsyncSession):
+    query = (
     	update(regulation_models.Regulation).
         where(regulation_models.Regulation.id == id).
         values({**regulation.dict()}).
         returning(regulation_models.Regulation)
     )
+    if not user.is_admin:
+        query = query.where(regulation_models.Regulation.divisions in user.divisions)
+    query = await db.execute(query)
     regulation = query.scalar()
     if not regulation:
         raise HTTPException(
@@ -64,8 +72,8 @@ async def update_regulation(id: int, regulation: regulation_schemas.RegulationCr
     return regulation
 
 
-async def delete_regulation(id:int, db: AsyncSession):
-    await get_one_regulation(id, db)
+async def delete_regulation(id:int, user: user_models.User, db: AsyncSession):
+    await get_one_regulation(id, user, db)
     await db.execute(
     	delete(regulation_models.Regulation).
         where(regulation_models.Regulation.id == id)

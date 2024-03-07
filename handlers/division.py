@@ -9,6 +9,7 @@ from models import (
 	regulation as regulation_models,
 	department as department_models,
 	division as division_models,
+	user as user_models
 )
 from handlers import (
 	regulation as regulation_handlers,
@@ -28,17 +29,19 @@ def main_query():
 	)
 
 
-async def get_all_divisions(db: AsyncSession):
+async def get_all_divisions(user: user_models.User, db: AsyncSession):
 	query = main_query()
-	query = await db.execute(query)
-	return query.scalars().all()
+	if not user.is_admin:
+		query = query.where(division_models.Division.users.any(id=user.id))
+	divisions = await db.execute(query)
+	return divisions.scalars().all()
 
 
-async def create_division(division: division_schemas.DivisionCreate, db: AsyncSession):
-	await regulation_handlers.get_one_regulation(division.regulation_id, db)
-	await department_handlers.get_one_department(division.department_1_id, db)
+async def create_division(division: division_schemas.DivisionCreate, user: user_models.User, db: AsyncSession):
+	await regulation_handlers.get_one_regulation(division.regulation_id, user, db)
+	await department_handlers.get_one_department(division.department_1_id, user, db)
 	if division.department_2_id:
-		await department_handlers.get_one_department(division.department_2_id, db)
+		await department_handlers.get_one_department(division.department_2_id, user, db)
 	query = await db.execute(
 		insert(division_models.Division).
 		values(**division.dict()).
@@ -55,8 +58,10 @@ async def create_division(division: division_schemas.DivisionCreate, db: AsyncSe
 	return division
 
 
-async def get_one_division(id: int, db: AsyncSession):
+async def get_one_division(id: int, user: user_models.User, db: AsyncSession):
 	query = main_query().where(division_models.Division.id == id)
+	if not user.is_admin:
+		query = query.where(division_models.Division.users.any(id=user.id))
 	query = await db.execute(query)
 	division = query.scalar()
 	if division:
@@ -67,12 +72,12 @@ async def get_one_division(id: int, db: AsyncSession):
 	)
 
 
-async def update_division(id: int, division: division_schemas.DivisionCreate, db: AsyncSession):
-	await regulation_handlers.get_one_regulation(division.regulation_id, db)
-	await department_handlers.get_one_department(division.department_1_id, db)
+async def update_division(id: int, division: division_schemas.DivisionCreate, user: user_models.User, db: AsyncSession):
+	await regulation_handlers.get_one_regulation(division.regulation_id, user, db)
+	await department_handlers.get_one_department(division.department_1_id, user, db)
 	if division.department_2_id:
-		await department_handlers.get_one_department(division.department_2_id, db)
-	query = await db.execute(
+		await department_handlers.get_one_department(division.department_2_id, user, db)
+	query = (
 		update(division_models.Division).
         where(division_models.Division.id == id).
         values({**division.dict()}).
@@ -83,6 +88,9 @@ async def update_division(id: int, division: division_schemas.DivisionCreate, db
 			selectinload(division_models.Division.department_2),
 		)
 	)
+	if not user.is_admin:
+		query = query.where(division_models.Division.users.any(id=user.id))
+	query = await db.execute(query)
 	division = query.scalar()
 	if not division:
 		raise HTTPException(
@@ -94,8 +102,8 @@ async def update_division(id: int, division: division_schemas.DivisionCreate, db
 	return division
 
 
-async def delete_division(id:int, db: AsyncSession):
-	await get_one_division(id, db)
+async def delete_division(id:int, user: user_models.User, db: AsyncSession):
+	await get_one_division(id, user, db)
 	await db.execute(
 		delete(division_models.Division).
         where(division_models.Division.id == id)

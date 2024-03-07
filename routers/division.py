@@ -38,7 +38,7 @@ async def get_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    return await division_handlers.get_all_divisions(db)
+    return await division_handlers.get_all_divisions(user, db)
 
 
 #	create division
@@ -52,7 +52,7 @@ async def create_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.create_division(division, db)
+	return await division_handlers.create_division(division, user, db)
 
 
 #	get one division
@@ -66,7 +66,7 @@ async def retreive_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.get_one_division(id, db)
+	return await division_handlers.get_one_division(id, user, db)
 
 
 #	update division
@@ -80,7 +80,7 @@ async def update_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.update_division(id, division, db)
+	return await division_handlers.update_division(id, division, user, db)
 
 
 #	delete division
@@ -93,4 +93,4 @@ async def delete_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.delete_division(id, db)
+	return await division_handlers.delete_division(id, user, db)

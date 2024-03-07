@@ -6,16 +6,20 @@ from sqlalchemy.orm import selectinload
 
 
 import schemas.course as course_schemas
-import models.course as course_models
+from models import (
+    course as course_models,
+    user as user_models
+)
 
 
 
 
-async def get_all_courses(db: AsyncSession):
-    query = await db.execute(
-        select(course_models.Course)
-	)
-    return query.scalars().all()
+async def get_all_courses(user: user_models.User, db: AsyncSession):
+    query = select(course_models.Course)
+    if not user.is_admin:
+        query = query.where(course_models.Course.divisions in user.divisions)
+    courses = await db.execute(query)
+    return courses.scalars().all()
 
 
 async def create_course(course: course_schemas.CourseCreate, db: AsyncSession):
@@ -30,13 +34,15 @@ async def create_course(course: course_schemas.CourseCreate, db: AsyncSession):
     return course
 
 
-async def get_one_course(id: int, db: AsyncSession):
-    query = await db.execute(
-    	select(course_models.Course).where(
-    		course_models.Course.id == id
-    	)
+async def get_one_course(id: int, user: user_models.User, db: AsyncSession):
+    query = (
+    	select(course_models.Course).
+        where(course_models.Course.id == id)
     )
-    course = query.scalar()
+    if not user.is_admin:
+        query = query.where(course_models.Course.divisions in user.divisions)
+    course = await db.execute(query)
+    course = course.scalar()
     if course:
         return course
     raise HTTPException(
@@ -45,17 +51,20 @@ async def get_one_course(id: int, db: AsyncSession):
     )
 
 
-async def update_course(id: int, course: course_schemas.CourseCreate, db: AsyncSession):
-    query = await db.execute(
+async def update_course(id: int, course: course_schemas.CourseCreate, user: user_models.User, db: AsyncSession):
+    query = (
     	update(course_models.Course).
         where(course_models.Course.id == id).
         values({**course.dict()}).
         returning(course_models.Course)
     )
+    if not user.is_admin:
+        query = query.where(course_models.Course.divisions in user.divisions)
+    query = await db.execute(query)
     course = query.scalar()
     if not course:
         raise HTTPException(
-        detail="no course with given id",
+        detail=f"no course with given id: {id}",
         status_code=status.HTTP_404_NOT_FOUND
     )
     await db.commit()
@@ -63,8 +72,8 @@ async def update_course(id: int, course: course_schemas.CourseCreate, db: AsyncS
     return course
 
 
-async def delete_course(id: int, db: AsyncSession):
-    await get_one_course(id, db)
+async def delete_course(id: int, user: user_models.User, db: AsyncSession):
+    await get_one_course(id, user, db)
     await db.execute(
     	delete(course_models.Course).
         where(course_models.Course.id == id)

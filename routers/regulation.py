@@ -34,7 +34,7 @@ async def get_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    return await regulation_handlers.get_all_regulations(db)
+    return await regulation_handlers.get_all_regulations(user, db)
 
 
 #	create regulation
@@ -62,7 +62,7 @@ async def retreive_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await regulation_handlers.get_one_regulation(id, db)
+	return await regulation_handlers.get_one_regulation(id, user, db)
 
 
 #	update regulation
@@ -76,7 +76,7 @@ async def update_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await regulation_handlers.update_regulation(id, regulation, db)
+	return await regulation_handlers.update_regulation(id, regulation, user, db)
 
 
 #	delete regulation
@@ -89,4 +89,4 @@ async def delete_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await regulation_handlers.delete_regulation(id, db)
+	return await regulation_handlers.delete_regulation(id, user, db)

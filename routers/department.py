@@ -33,7 +33,7 @@ async def get_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    return await department_handlers.get_all_departments(db)
+    return await department_handlers.get_all_departments(user, db)
 
 
 #	create department
@@ -61,7 +61,7 @@ async def retreive_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await department_handlers.get_one_department(id, db)
+	return await department_handlers.get_one_department(id, user, db)
 
 
 #	update department
@@ -75,7 +75,7 @@ async def update_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await department_handlers.update_department(id, department, db)
+	return await department_handlers.update_department(id, department, user, db)
 
 
 #	delete department
@@ -88,4 +88,4 @@ async def delete_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	await department_handlers.delete_department(id, db)
+	await department_handlers.delete_department(id, user, db)
