@@ -17,6 +17,7 @@ from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.regulation as regulation_schemas
 import models.regulation as regulation_models
+import models.user as user_models
 
 
 regulation_router = APIRouter()
@@ -28,7 +29,10 @@ regulation_router = APIRouter()
     response_model=List[regulation_schemas.Regulation],
     status_code=status.HTTP_200_OK
 )
-async def get_regulations(db: Annotated[AsyncSession, Depends(get_async_db)]):
+async def get_regulations(
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
+):
     query = await db.execute(
         select(regulation_models.Regulation)
 	)
@@ -43,7 +47,8 @@ async def get_regulations(db: Annotated[AsyncSession, Depends(get_async_db)]):
 )
 async def create_regulations(
 	regulation: regulation_schemas.RegulationCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		insert(regulation_models.Regulation).
@@ -64,7 +69,8 @@ async def create_regulations(
 )
 async def retreive_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(regulation_models.Regulation).where(
@@ -88,7 +94,8 @@ async def retreive_regulations(
 async def update_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be updated')],
 	regulation: regulation_schemas.RegulationCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		update(regulation_models.Regulation).
@@ -114,7 +121,8 @@ async def update_regulations(
 )
 async def delete_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(regulation_models.Regulation).where(
