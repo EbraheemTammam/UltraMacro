@@ -6,9 +6,9 @@ from .test_department import test_create_department
 from .test_division import test_create_division
 
 @pytest.fixture
-def test_create_student(client, test_create_division):
+def test_create_student(authorized_client, test_create_division):
     group = test_create_division
-    res = client.post(
+    res = authorized_client.post(
         '/students',
         json={
             "name": "test student",
@@ -31,29 +31,29 @@ def test_create_student(client, test_create_division):
     return res.json()
 
 
-def test_get_all_students(client):
-    res = client.get(
+def test_get_all_students(authorized_client):
+    res = authorized_client.get(
         '/students',
     )
     assert res.status_code == 200
 
 
-def test_get_student(client, test_create_student):
+def test_get_student(authorized_client, test_create_student):
     student = test_create_student
-    res = client.get(
+    res = authorized_client.get(
         f'/students/{student["id"]}',
     )
     assert res.status_code == 200
 
 
-def test_get_non_existing_student(client):
-    res = client.get(
+def test_get_non_existing_student(authorized_client):
+    res = authorized_client.get(
         f'/students/{uuid4()}',
     )
     assert res.status_code == 404
 
 
-def test_update_student(client, test_create_student, test_create_division):
+def test_update_student(authorized_client, test_create_student, test_create_division):
     group = test_create_division
     division = test_create_division
     student = {
@@ -62,7 +62,7 @@ def test_update_student(client, test_create_student, test_create_division):
         "group_id": group["id"],
         "division_id": division["id"],
     }
-    res = client.put(
+    res = authorized_client.put(
         f'/students/{student["id"]}',
         json=student
     )
@@ -80,7 +80,7 @@ def test_update_student(client, test_create_student, test_create_division):
     assert res.json()["graduate"] == False
 
 
-def test_update_non_exisitng_student(client, test_create_student, test_create_division):
+def test_update_non_exisitng_student(authorized_client, test_create_student, test_create_division):
     group = test_create_division
     division = test_create_division
     student = {
@@ -89,23 +89,23 @@ def test_update_non_exisitng_student(client, test_create_student, test_create_di
         "group_id": group["id"],
         "division_id": division["id"],
     }
-    res = client.put(
+    res = authorized_client.put(
         f'/students/{uuid4()}',
         json=student
     )
     assert res.status_code == 404
 
 
-def test_delete_student(client, test_create_student):
+def test_delete_student(authorized_client, test_create_student):
     student = test_create_student
-    res = client.delete(
+    res = authorized_client.delete(
         f'/students/{student["id"]}',
     )
     assert res.status_code == 204
 
 
-def test_delete_non_exisitng_student(client):
-    res = client.delete(
+def test_delete_non_exisitng_student(authorized_client):
+    res = authorized_client.delete(
         f'/students/{uuid4()}',
     )
     assert res.status_code == 404

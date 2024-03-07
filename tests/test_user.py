@@ -4,7 +4,7 @@ import uuid
 
 def test_get_all_users(client):
     res = client.get(
-        '/users',
+        '/accounts',
     )
     assert res.status_code == 200
 
@@ -12,14 +12,14 @@ def test_get_all_users(client):
 def test_get_user(client, test_user):
     user = test_user
     res = client.get(
-        f'/users/{user["id"]}',
+        f'/accounts/{user["id"]}',
     )
     assert res.status_code == 200
 
 
 def test_get_non_existing_user(client):
     res = client.get(
-        f'/users/{uuid.uuid4()}',
+        f'/accounts/{uuid.uuid4()}',
     )
     assert res.status_code == 404
 
@@ -33,7 +33,7 @@ def test_update_user(client, test_user):
         "is_admin": False
     }
     res = client.put(
-        f'/users/{user["id"]}',
+        f'/accounts/{user["id"]}',
         json=user
     )
     assert res.status_code == 200
@@ -52,7 +52,7 @@ def test_update_non_existing_user(client):
         "is_admin": False
     }
     res = client.put(
-        f'/users/{uuid.uuid4()}',
+        f'/accounts/{uuid.uuid4()}',
         json=user
     )
     assert res.status_code == 404
@@ -61,10 +61,10 @@ def test_update_non_existing_user(client):
 def test_delete_user(client, test_user):
     user = test_user
     res = client.delete(
-        f'/users/{user["id"]}',
+        f'/accounts/{user["id"]}',
     )
     assert res.status_code == 204
     res = client.delete(
-        f'/users/{uuid.uuid4()}',
+        f'/accounts/{uuid.uuid4()}',
     )
     assert res.status_code == 404

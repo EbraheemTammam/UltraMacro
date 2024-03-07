@@ -2,8 +2,8 @@ import pytest
 
 
 @pytest.fixture
-def test_create_course(client):
-    res = client.post(
+def test_create_course(authorized_client):
+    res = authorized_client.post(
         '/courses',
         json={
             "code": "TEST12",
@@ -28,29 +28,29 @@ def test_create_course(client):
     return res.json()
 
 
-def test_get_all_courses(client):
-    res = client.get(
+def test_get_all_courses(authorized_client):
+    res = authorized_client.get(
         '/courses',
     )
     assert res.status_code == 200
 
 
-def test_get_course(client, test_create_course):
+def test_get_course(authorized_client, test_create_course):
     course = test_create_course
-    res = client.get(
+    res = authorized_client.get(
         f'/courses/{course["id"]}',
     )
     assert res.status_code == 200
 
 
-def test_get_non_existing_course(client):
-    res = client.get(
+def test_get_non_existing_course(authorized_client):
+    res = authorized_client.get(
         '/courses/1000',
     )
     assert res.status_code == 404
 
 
-def test_update_course(client, test_create_course):
+def test_update_course(authorized_client, test_create_course):
     course = {
         **test_create_course,
         "code": "12TEST",
@@ -62,7 +62,7 @@ def test_update_course(client, test_create_course):
         "semester": 2,
         "required": False,
     }
-    res = client.put(
+    res = authorized_client.put(
         f'/courses/{course["id"]}',
         json=course
     )
@@ -77,7 +77,7 @@ def test_update_course(client, test_create_course):
     assert res.json()["required"] == False
 
 
-def test_update_non_exisitng_course(client):
+def test_update_non_exisitng_course(authorized_client):
     course = {
         "code": "12TEST",
         "name": "updated course",
@@ -88,23 +88,23 @@ def test_update_non_exisitng_course(client):
         "semester": 2,
         "required": False,
     }
-    res = client.put(
+    res = authorized_client.put(
         '/courses/1000',
         json=course
     )
     assert res.status_code == 404
 
 
-def test_delete_course(client, test_create_course):
+def test_delete_course(authorized_client, test_create_course):
     course = test_create_course
-    res = client.delete(
+    res = authorized_client.delete(
         f'/courses/{course["id"]}',
     )
     assert res.status_code == 204
 
 
-def test_delete_non_exisitng_course(client):
-    res = client.delete(
+def test_delete_non_exisitng_course(authorized_client):
+    res = authorized_client.delete(
         '/courses/1000',
     )
     assert res.status_code == 404
