@@ -17,7 +17,7 @@ from handlers import (
 
 
 
-def query():
+def main_query():
 	return (
 	    select(division_models.Division).
 		options(
@@ -29,7 +29,8 @@ def query():
 
 
 async def get_all_divisions(db: AsyncSession):
-	query = await db.execute(query())
+	query = main_query()
+	query = await db.execute(query)
 	return query.scalars().all()
 
 
@@ -55,7 +56,7 @@ async def create_division(division: division_schemas.DivisionCreate, db: AsyncSe
 
 
 async def get_one_division(id: int, db: AsyncSession):
-	query = query().where(division_models.Division.id == id)
+	query = main_query().where(division_models.Division.id == id)
 	query = await db.execute(query)
 	if query:
 		return query.scalar()
