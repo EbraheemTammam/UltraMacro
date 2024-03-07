@@ -1,6 +1,7 @@
 from uuid import UUID
-from typing import Annotated
+from typing import List
 from pydantic import BaseModel, EmailStr
+from schemas.division import Division
 
 
 class UserBase(BaseModel):
@@ -11,9 +12,11 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    divisions: List[int]
 
 class User(UserBase):
     id: UUID
+    divisions: List[Division]
 
     class Config:
         from_attributes = True
