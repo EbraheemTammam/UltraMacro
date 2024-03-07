@@ -25,10 +25,11 @@ def test_user(client):
 		'first_name': 'eepy',
 		'last_name': 'sleepy',
 		'password': 'password',
-		'is_admin': True
+		'is_admin': True,
+		'divisions': []
 	}
 	res = client.post(
-		'http://localhost:8000/users',
+		'http://localhost:8000/accounts',
 		json=user_data
 	)
 	assert res.status_code == 201
@@ -38,7 +39,7 @@ def test_user(client):
 
 @pytest.fixture
 def token(test_user):
-	return create_access_token({'user_id': test_user['id']})
+	return create_access_token({'user_id': test_user['id'], 'is_admin': True})
 
 @pytest.fixture
 def authorized_client(client, token):
