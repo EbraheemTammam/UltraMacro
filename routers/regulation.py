@@ -18,6 +18,7 @@ from database import get_db, get_async_db
 import schemas.regulation as regulation_schemas
 import models.regulation as regulation_models
 import models.user as user_models
+import handlers.regulation as regulation_handlers
 
 
 regulation_router = APIRouter()
@@ -33,10 +34,7 @@ async def get_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    query = await db.execute(
-        select(regulation_models.Regulation)
-	)
-    return query.scalars().all()
+    return await regulation_handlers.get_all_regulations(db)
 
 
 #	create regulation
@@ -50,15 +48,7 @@ async def create_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		insert(regulation_models.Regulation).
-		values(**regulation.dict()).
-		returning(regulation_models.Regulation)
-	)
-	regulation = query.scalar_one()
-	await db.commit()
-	await db.refresh(regulation)
-	return regulation
+	return await regulation_handlers.create_regulation(regulation, db)
 
 
 #	get one regulation
@@ -72,18 +62,7 @@ async def retreive_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(regulation_models.Regulation).where(
-			regulation_models.Regulation.id == id
-		)
-	)
-	regulation = query.scalar()
-	if regulation:
-		return regulation
-	raise HTTPException(
-		detail="no regulation with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
+	return await regulation_handlers.get_one_regulation(id, db)
 
 
 #	update regulation
@@ -97,21 +76,7 @@ async def update_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		update(regulation_models.Regulation).
-        where(regulation_models.Regulation.id == id).
-        values({**regulation.dict()}).
-        returning(regulation_models.Regulation)
-	)
-	regulation = query.scalar()
-	if not regulation:
-		raise HTTPException(
-		detail="no regulation with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
-	await db.commit()
-	await db.refresh(regulation)
-	return regulation
+	return await regulation_handlers.update_regulation(id, regulation, db)
 
 
 #	delete regulation
@@ -124,19 +89,4 @@ async def delete_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(regulation_models.Regulation).where(
-			regulation_models.Regulation.id == id
-		)
-	)
-	if not query.scalar():
-		raise HTTPException(
-			detail="no regulation with given id",
-			status_code=status.HTTP_404_NOT_FOUND
-		)
-	query = await db.execute(
-		delete(regulation_models.Regulation).
-        where(regulation_models.Regulation.id == id)
-	)
-	await db.commit()
-	return
+	return await regulation_handlers.delete_regulation(id, db)
