@@ -58,8 +58,9 @@ async def create_division(division: division_schemas.DivisionCreate, db: AsyncSe
 async def get_one_division(id: int, db: AsyncSession):
 	query = main_query().where(division_models.Division.id == id)
 	query = await db.execute(query)
-	if query:
-		return query.scalar()
+	division = query.scalar()
+	if division:
+		return division
 	raise HTTPException(
 		detail=f"no division with given id: {id}",
 		status_code=status.HTTP_404_NOT_FOUND

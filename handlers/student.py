@@ -72,9 +72,9 @@ async def create_student(student: student_schemas.StudentCreate, db: AsyncSessio
 
 
 async def get_one_student(id: UUID, db: AsyncSession):
-	student = await db.execute(
-		main_query().where(student_models.Student.id == id)
-	)
+	query = main_query().where(student_models.Student.id == id)
+	query = await db.execute(query)
+	student = query.scalar()
 	if student:
 		return student
 	raise HTTPException(
