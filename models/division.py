@@ -16,6 +16,7 @@ from sqlalchemy.sql.expression import text, null
 from sqlalchemy_utils import EmailType, URLType
 
 from database import Base
+from models.user import UserDivisions
 
 
 class Division(Base):
@@ -45,9 +46,12 @@ class Division(Base):
 	regulation = relationship("Regulation", back_populates="divisions")
 	department_1 = relationship(
 		"Department", 
-		foreign_keys=[department_1_id]
+		foreign_keys=[department_1_id],
+		back_populates='main_divisions'
 	)
 	department_2 = relationship(
 		"Department", 
-		foreign_keys=[department_2_id]
+		foreign_keys=[department_2_id],
+		back_populates='secondary_divisions'
 	)
+	users = relationship("User", secondary=UserDivisions, back_populates='divisions')

@@ -61,4 +61,4 @@ class User(Base):
 	)
 	is_admin = Column(Boolean, nullable=False, default=False)
 
-	divisions = relationship("Division", secondary=UserDivisions)
+	divisions = relationship("Division", secondary=UserDivisions, back_populates='users')
