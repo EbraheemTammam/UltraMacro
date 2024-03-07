@@ -93,4 +93,4 @@ async def delete_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return division_handlers.delete_division(id, db)
+	return await division_handlers.delete_division(id, db)

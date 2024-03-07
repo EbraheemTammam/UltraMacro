@@ -36,7 +36,7 @@ async def get_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    return student_handlers.get_all_students(db)
+    return await student_handlers.get_all_students(db)
 
 #	get all graduate students
 @student_router.get(
@@ -48,7 +48,7 @@ async def get_graduate_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    return student_handlers.get_all_students(db=db, graduate=True)
+    return await student_handlers.get_all_students(db=db, graduate=True)
 
 
 #	create student
