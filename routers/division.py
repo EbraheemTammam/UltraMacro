@@ -22,6 +22,7 @@ from models import (
 	department as department_models,
 	user as user_models
 )
+import handlers.division as division_handlers
 
 
 division_router = APIRouter()
@@ -37,15 +38,7 @@ async def get_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    query = await db.execute(
-        select(division_models.Division).
-		options(
-			selectinload(division_models.Division.regulation),
-			selectinload(division_models.Division.department_1),
-			selectinload(division_models.Division.department_2),
-		)
-	)
-    return query.scalars().all()
+    return await division_handlers.get_all_divisions(db)
 
 
 #	create division
@@ -59,48 +52,7 @@ async def create_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	regulation = await db.execute(
-		select(regulation_models.Regulation).
-		where(regulation_models.Regulation.id == division.regulation_id)
-	)
-	if not regulation.scalar():
-		raise HTTPException(
-			detail=f"no regulation with given id: {division.regulation_id}",
-			status_code=status.HTTP_400_BAD_REQUEST
-		)
-	department_1 = await db.execute(
-		select(department_models.Department).
-		where(department_models.Department.id == division.department_1_id)
-	)
-	if not department_1.scalar():
-		raise HTTPException(
-			detail=f"no department with given id: {division.department_1_id}",
-			status_code=status.HTTP_400_BAD_REQUEST
-		)
-	if division.department_2_id:
-		department_2 = await db.execute(
-			select(department_models.Department).
-			where(department_models.Department.id == division.department_2_id)
-		)
-		if not department_2.scalar():
-			raise HTTPException(
-				detail=f"no department with given id: {division.department_2_id}",
-				status_code=status.HTTP_400_BAD_REQUEST
-			)
-	query = await db.execute(
-		insert(division_models.Division).
-		values(**division.dict()).
-		returning(division_models.Division).
-		options(
-			selectinload(division_models.Division.regulation),
-			selectinload(division_models.Division.department_1),
-			selectinload(division_models.Division.department_2),
-		)
-	)
-	division = query.scalar_one()
-	await db.commit()
-	await db.refresh(division)
-	return division
+	return await division_handlers.create_division(division, db)
 
 
 #	get one division
@@ -114,22 +66,7 @@ async def retreive_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(division_models.Division).
-		where(division_models.Division.id == id).
-		options(
-			selectinload(division_models.Division.regulation),
-			selectinload(division_models.Division.department_1),
-			selectinload(division_models.Division.department_2),
-		)
-	)
-	division = query.scalar()
-	if division:
-		return division
-	raise HTTPException(
-		detail="no division with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
+	return await division_handlers.get_one_division(id, db)
 
 
 #	update division
@@ -143,54 +80,7 @@ async def update_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	regulation = await db.execute(
-		select(regulation_models.Regulation).
-		where(regulation_models.Regulation.id == division.regulation_id)
-	)
-	if not regulation.scalar():
-		raise HTTPException(
-			detail=f"no regulation with given id: {division.regulation_id}",
-			status_code=status.HTTP_400_BAD_REQUEST
-		)
-	department_1 = await db.execute(
-		select(department_models.Department).
-		where(department_models.Department.id == division.department_1_id)
-	)
-	if not department_1.scalar():
-		raise HTTPException(
-			detail=f"no department with given id: {division.department_1_id}",
-			status_code=status.HTTP_400_BAD_REQUEST
-		)
-	if division.department_2_id:
-		department_2 = await db.execute(
-			select(department_models.Department).
-			where(department_models.Department.id == division.department_2_id)
-		)
-		if not department_2.scalar():
-			raise HTTPException(
-				detail=f"no department with given id: {division.department_2_id}",
-				status_code=status.HTTP_400_BAD_REQUEST
-			)
-	query = await db.execute(
-		update(division_models.Division).
-        where(division_models.Division.id == id).
-        values({**division.dict()}).
-        returning(division_models.Division).
-		options(
-			selectinload(division_models.Division.regulation),
-			selectinload(division_models.Division.department_1),
-			selectinload(division_models.Division.department_2),
-		)
-	)
-	division = query.scalar()
-	if not division:
-		raise HTTPException(
-		detail="no division with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
-	await db.commit()
-	await db.refresh(division)
-	return division
+	return await division_handlers.update_division(id, division, db)
 
 
 #	delete division
@@ -203,19 +93,4 @@ async def delete_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(division_models.Division).where(
-			division_models.Division.id == id
-		)
-	)
-	if not query.scalar():
-		raise HTTPException(
-			detail="no division with given id",
-			status_code=status.HTTP_404_NOT_FOUND
-		)
-	query = await db.execute(
-		delete(division_models.Division).
-        where(division_models.Division.id == id)
-	)
-	await db.commit()
-	return
+	return division_handlers.delete_division(id, db)
