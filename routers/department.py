@@ -18,6 +18,7 @@ from database import get_db, get_async_db
 import schemas.department as department_schemas
 import models.department as department_models
 import models.user as user_models
+import handlers.department as department_handlers
 
 
 department_router = APIRouter()
@@ -32,10 +33,7 @@ async def get_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    query = await db.execute(
-        select(department_models.Department)
-	)
-    return query.scalars().all()
+    return await department_handlers.get_all_departments(db)
 
 
 #	create department
@@ -49,15 +47,7 @@ async def create_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		insert(department_models.Department).
-		values(**department.dict()).
-		returning(department_models.Department)
-	)
-	department = query.scalar_one()
-	await db.commit()
-	await db.refresh(department)
-	return department
+	return await department_handlers.create_department(department, db)
 
 
 #	get one department
@@ -71,18 +61,7 @@ async def retreive_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(department_models.Department).where(
-			department_models.Department.id == id
-		)
-	)
-	department = query.scalar()
-	if department:
-		return department
-	raise HTTPException(
-		detail="no department with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
+	return await department_handlers.get_one_department(id, db)
 
 
 #	update department
@@ -96,21 +75,7 @@ async def update_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		update(department_models.Department).
-        where(department_models.Department.id == id).
-        values({**department.dict()}).
-        returning(department_models.Department)
-	)
-	department = query.scalar()
-	if not department:
-		raise HTTPException(
-		detail="no department with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
-	await db.commit()
-	await db.refresh(department)
-	return department
+	return await department_handlers.update_department(id, department, db)
 
 
 #	delete department
@@ -123,19 +88,4 @@ async def delete_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(department_models.Department).where(
-			department_models.Department.id == id
-		)
-	)
-	if not query.scalar():
-		raise HTTPException(
-			detail="no department with given id",
-			status_code=status.HTTP_404_NOT_FOUND
-		)
-	query = await db.execute(
-		delete(department_models.Department).
-        where(department_models.Department.id == id)
-	)
-	await db.commit()
-	return
+	await department_handlers.delete_department(id, db)
