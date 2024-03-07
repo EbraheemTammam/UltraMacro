@@ -10,7 +10,7 @@ from fastapi import (
 	Query
 )
 from sqlalchemy import insert, update, delete
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -18,6 +18,7 @@ from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
 import schemas.user as user_schemas
 import models.user as user_models
+import models.division as division_models
 
 
 user_router = APIRouter()
@@ -29,9 +30,20 @@ user_router = APIRouter()
     response_model=List[user_schemas.User],
     status_code=status.HTTP_200_OK
 )
-async def get_users(db: Annotated[AsyncSession, Depends(get_async_db)]):
+async def get_users(
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
+):
     query = await db.execute(
-        select(user_models.User)
+        select(user_models.User).
+		options(
+			selectinload(user_models.User.divisions).
+			options(
+				selectinload(division_models.Division.regulation),
+				selectinload(division_models.Division.department_1),
+				selectinload(division_models.Division.department_2),
+			)
+		)
 	)
     return query.scalars().all()
 
@@ -44,7 +56,8 @@ async def get_users(db: Annotated[AsyncSession, Depends(get_async_db)]):
 )
 async def create_users(
 	user: user_schemas.UserCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	current_user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	check_user = await db.execute(
 		select(user_models.User).
@@ -58,7 +71,15 @@ async def create_users(
 	query = await db.execute(
 		insert(user_models.User).
 		values(**user.dict()).
-		returning(user_models.User)
+		returning(user_models.User).
+		options(
+			selectinload(user_models.User.divisions).
+			options(
+				selectinload(division_models.Division.regulation),
+				selectinload(division_models.Division.department_1),
+				selectinload(division_models.Division.department_2),
+			)
+		)
 	)
 	user = query.scalar_one()
 	await db.commit()
@@ -74,11 +95,20 @@ async def create_users(
 )
 async def retreive_users(
 	id: Annotated[UUID, Path(..., title='id of user to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(user_models.User).where(
 			user_models.User.id == id
+		).
+		options(
+			selectinload(user_models.User.divisions).
+			options(
+				selectinload(division_models.Division.regulation),
+				selectinload(division_models.Division.department_1),
+				selectinload(division_models.Division.department_2),
+			)
 		)
 	)
 	user = query.scalar()
@@ -98,13 +128,31 @@ async def retreive_users(
 async def update_users(
 	id: Annotated[UUID, Path(..., title='id of user to be updated')],
 	user: user_schemas.UserCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	current_user: Annotated[user_models.User, Depends(get_current_user)]
 ):
+	check_user = await db.execute(
+		select(user_models.User).
+		where(user_models.User.email == user.email)
+	)
+	if check_user.scalar():
+		raise HTTPException(
+			detail="Email already exists",
+			status_code=status.HTTP_403_FORBIDDEN
+		)
 	query = await db.execute(
 		update(user_models.User).
         where(user_models.User.id == id).
         values({**user.dict()}).
-        returning(user_models.User)
+        returning(user_models.User).
+		options(
+			selectinload(user_models.User.divisions).
+			options(
+				selectinload(division_models.Division.regulation),
+				selectinload(division_models.Division.department_1),
+				selectinload(division_models.Division.department_2),
+			)
+		)
 	)
 	user = query.scalar()
 	if not user:
@@ -124,7 +172,8 @@ async def update_users(
 )
 async def delete_users(
 	id: Annotated[UUID, Path(..., title='id of user to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)]
+	db: Annotated[AsyncSession, Depends(get_async_db)],
+	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	query = await db.execute(
 		select(user_models.User).where(
