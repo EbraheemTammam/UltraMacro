@@ -18,6 +18,7 @@ from database import get_db, get_async_db
 import schemas.course as course_schemas
 import models.course as course_models
 import models.user as user_models
+import handlers.course as course_handlers
 
 
 course_router = APIRouter()
@@ -32,10 +33,7 @@ async def get_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-    query = await db.execute(
-        select(course_models.Course)
-	)
-    return query.scalars().all()
+    return await course_handlers.get_all_courses(db)
 
 
 #	create course
@@ -49,15 +47,7 @@ async def create_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		insert(course_models.Course).
-		values(**course.dict()).
-		returning(course_models.Course)
-	)
-	course = query.scalar_one()
-	await db.commit()
-	await db.refresh(course)
-	return course
+	return await course_handlers.create_course(course, db)
 
 
 #	get one course
@@ -71,18 +61,7 @@ async def retreive_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(course_models.Course).where(
-			course_models.Course.id == id
-		)
-	)
-	course = query.scalar()
-	if course:
-		return course
-	raise HTTPException(
-		detail="no course with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
+	return course_handlers.get_one_course(id, db)
 
 
 #	update course
@@ -96,21 +75,7 @@ async def update_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		update(course_models.Course).
-        where(course_models.Course.id == id).
-        values({**course.dict()}).
-        returning(course_models.Course)
-	)
-	course = query.scalar()
-	if not course:
-		raise HTTPException(
-		detail="no course with given id",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
-	await db.commit()
-	await db.refresh(course)
-	return course
+	return await course_handlers.update_course(id, course, db)
 
 
 #	delete course
@@ -123,19 +88,5 @@ async def delete_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	query = await db.execute(
-		select(course_models.Course).where(
-			course_models.Course.id == id
-		)
-	)
-	if not query.scalar():
-		raise HTTPException(
-			detail="no course with given id",
-			status_code=status.HTTP_404_NOT_FOUND
-		)
-	query = await db.execute(
-		delete(course_models.Course).
-        where(course_models.Course.id == id)
-	)
-	await db.commit()
-	return
+	return course_handlers.delete_course(id, db)
+	
