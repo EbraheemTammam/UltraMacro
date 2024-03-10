@@ -1,5 +1,7 @@
-from typing import Annotated
+from typing import Annotated, List
 from pydantic import BaseModel
+
+from schemas.division import Division
 
 
 class CourseBase(BaseModel):
@@ -14,10 +16,11 @@ class CourseBase(BaseModel):
 
 
 class CourseCreate(CourseBase):
-    pass
+    divisions: List[int]
 
 class Course(CourseBase):
     id: int
+    divisions: List[Division]
 
     class Config:
         from_attributes = True
