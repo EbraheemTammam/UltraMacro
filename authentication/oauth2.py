@@ -9,15 +9,21 @@ from sqlalchemy.future import select
 
 from config import settings
 from database import get_async_db
-import models.user as user_models
-import models.division as division_models
+from models import (
+    user as user_models,
+	division as division_models
+)
 import schemas
+
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
 
+
+
 def create_access_token(payload: dict):
 	data = payload.copy()
-	expires = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+	expires = datetime.utcnow() + timedelta(hours=settings.ACCESS_TOKEN_EXPIRE_HOURS)
 	data.update({'exp': expires})
 
 	token = jwt.encode(
