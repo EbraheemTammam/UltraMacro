@@ -41,12 +41,7 @@ async def create_regulation(regulation: regulation_schemas.RegulationCreate, db:
 
 
 async def get_one_regulation(id: int, db: AsyncSession):
-    query = (
-        select(regulation_models.Regulation).
-        where(regulation_models.Regulation.id == id)
-    )
-    query = await db.execute(query)
-    regulation = query.scalar()
+    regulation = await db.get(regulation_models.Regulation, id)
     if regulation:
         return regulation
     raise HTTPException(

@@ -49,12 +49,7 @@ async def create_department(department: department_schemas.DepartmentCreate, db:
 
 
 async def get_one_department(id: int, db: AsyncSession):
-    query = (
-    	select(department_models.Department).
-        where(department_models.Department.id == id)
-    )
-    department = await db.execute(query)
-    department = department.scalar()
+    department = await db.get(department_models.Department, id)
     if department:
         return department
     raise HTTPException(
