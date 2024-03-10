@@ -37,16 +37,11 @@ async def create_department(department: department_schemas.DepartmentCreate, db:
     return department
 
 
-async def get_one_department(id: int, user: user_models.User, db: AsyncSession):
+async def get_one_department(id: int, db: AsyncSession):
     query = (
     	select(department_models.Department).
         where(department_models.Department.id == id)
     )
-    if not user.is_admin:
-        query = query.where(
-            department_models.Department.main_divisions in user.divisions or
-            department_models.Department.secondary_divisions in user.divisions
-        )
     department = await db.execute(query)
     department = department.scalar()
     if department:
@@ -57,18 +52,13 @@ async def get_one_department(id: int, user: user_models.User, db: AsyncSession):
     )
 
 
-async def update_department(id: int, department: department_schemas.DepartmentCreate, user: user_models.User, db: AsyncSession):
+async def update_department(id: int, department: department_schemas.DepartmentCreate, db: AsyncSession):
     query = (
     	update(department_models.Department).
         where(department_models.Department.id == id).
         values({**department.dict()}).
         returning(department_models.Department)
     )
-    if not user.is_admin:
-        query = query.where(
-            department_models.Department.main_divisions in user.divisions or
-            department_models.Department.secondary_divisions in user.divisions
-        )
     department = await db.execute(query)
     department = department.scalar()
     if not department:
@@ -81,8 +71,8 @@ async def update_department(id: int, department: department_schemas.DepartmentCr
     return department
 
 
-async def delete_department(id: int, user: user_models.User, db: AsyncSession):
-    await get_one_department(id, user, db)
+async def delete_department(id: int, db: AsyncSession):
+    await get_one_department(id, db)
     await db.execute(
     	delete(department_models.Department).
         where(department_models.Department.id == id)

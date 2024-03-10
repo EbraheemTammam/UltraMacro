@@ -34,13 +34,11 @@ async def create_regulation(regulation: regulation_schemas.RegulationCreate, db:
     return regulation
 
 
-async def get_one_regulation(id: int, user: user_models.User, db: AsyncSession):
+async def get_one_regulation(id: int, db: AsyncSession):
     query = (
         select(regulation_models.Regulation).
         where(regulation_models.Regulation.id == id)
     )
-    if not user.is_admin:
-        query = query.where(regulation_models.Regulation.divisions in user.divisions)
     query = await db.execute(query)
     regulation = query.scalar()
     if regulation:
@@ -51,15 +49,13 @@ async def get_one_regulation(id: int, user: user_models.User, db: AsyncSession):
     )
 
 
-async def update_regulation(id: int, regulation: regulation_schemas.RegulationCreate, user: user_models.User, db: AsyncSession):
+async def update_regulation(id: int, regulation: regulation_schemas.RegulationCreate, db: AsyncSession):
     query = (
     	update(regulation_models.Regulation).
         where(regulation_models.Regulation.id == id).
         values({**regulation.dict()}).
         returning(regulation_models.Regulation)
     )
-    if not user.is_admin:
-        query = query.where(regulation_models.Regulation.divisions in user.divisions)
     query = await db.execute(query)
     regulation = query.scalar()
     if not regulation:
@@ -72,8 +68,8 @@ async def update_regulation(id: int, regulation: regulation_schemas.RegulationCr
     return regulation
 
 
-async def delete_regulation(id:int, user: user_models.User, db: AsyncSession):
-    await get_one_regulation(id, user, db)
+async def delete_regulation(id:int, db: AsyncSession):
+    await get_one_regulation(id, db)
     await db.execute(
     	delete(regulation_models.Regulation).
         where(regulation_models.Regulation.id == id)

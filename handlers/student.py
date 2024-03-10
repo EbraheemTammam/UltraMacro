@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import insert, update, delete
+from sqlalchemy import insert, update, delete, String
 from sqlalchemy.orm import selectinload
 
 import schemas.student as student_schemas
@@ -48,8 +48,8 @@ async def get_all_students(user: user_models.User, db: AsyncSession, graduate: b
 	
 
 
-async def create_student(student: student_schemas.StudentCreate, user: user_models.User, db: AsyncSession):
-	await division_handlers.get_one_division(student.group_id, user, db)
+async def create_student(student: student_schemas.StudentCreate, db: AsyncSession):
+	await division_handlers.get_one_division(student.group_id, db)
 	if student.division_id:
 		await division_handlers.get_one_division(student.division_id, db)
 	query = await db.execute(
@@ -76,14 +76,10 @@ async def create_student(student: student_schemas.StudentCreate, user: user_mode
 	await db.refresh(student)
 	return student
 
+from sqlalchemy import Text, cast
 
-async def get_one_student(id: UUID, user: user_models.User, db: AsyncSession):
-	query = main_query().where(student_models.Student.id == id)
-	if not user.is_admin:
-		query = query.where(
-			student_models.Student.group in user.divisions or
-			student_models.Student.division in user.divisions
-		)
+async def get_one_student(id: UUID, db: AsyncSession):
+	query = main_query().where(student_models.Student.id==cast(str(id), String))
 	query = await db.execute(query)
 	student = query.scalar()
 	if student:
@@ -94,10 +90,10 @@ async def get_one_student(id: UUID, user: user_models.User, db: AsyncSession):
 	)
 
 
-async def update_student(id: UUID, student: student_schemas.StudentCreate, user: user_models.User, db: AsyncSession):
-	await division_handlers.get_one_division(student.group_id, user, db)
+async def update_student(id: UUID, student: student_schemas.StudentCreate, db: AsyncSession):
+	await division_handlers.get_one_division(student.group_id, db)
 	if student.division_id:
-		await division_handlers.get_one_division(student.division_id, user, db)
+		await division_handlers.get_one_division(student.division_id, db)
 	query = (
 		update(student_models.Student).
         where(student_models.Student.id == id).
@@ -118,11 +114,6 @@ async def update_student(id: UUID, student: student_schemas.StudentCreate, user:
 			)
 		)
 	)
-	if not user.is_admin:
-		query = query.where(
-			student_models.Student.group in user.divisions or
-			student_models.Student.division in user.divisions
-		)
 	query = await db.execute(query)
 	student = query.scalar()
 	if not student:
@@ -135,8 +126,8 @@ async def update_student(id: UUID, student: student_schemas.StudentCreate, user:
 	return student
 
 
-async def delete_student(id: UUID, user: user_models.User, db: AsyncSession):
-	await get_one_student(id, user, db)
+async def delete_student(id: UUID, db: AsyncSession):
+	await get_one_student(id, db)
 	await db.execute(
 		delete(student_models.Student).
         where(student_models.Student.id == id)

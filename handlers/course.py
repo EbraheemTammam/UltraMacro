@@ -34,13 +34,11 @@ async def create_course(course: course_schemas.CourseCreate, db: AsyncSession):
     return course
 
 
-async def get_one_course(id: int, user: user_models.User, db: AsyncSession):
+async def get_one_course(id: int, db: AsyncSession):
     query = (
     	select(course_models.Course).
         where(course_models.Course.id == id)
     )
-    if not user.is_admin:
-        query = query.where(course_models.Course.divisions in user.divisions)
     course = await db.execute(query)
     course = course.scalar()
     if course:
@@ -51,15 +49,13 @@ async def get_one_course(id: int, user: user_models.User, db: AsyncSession):
     )
 
 
-async def update_course(id: int, course: course_schemas.CourseCreate, user: user_models.User, db: AsyncSession):
+async def update_course(id: int, course: course_schemas.CourseCreate, db: AsyncSession):
     query = (
     	update(course_models.Course).
         where(course_models.Course.id == id).
         values({**course.dict()}).
         returning(course_models.Course)
     )
-    if not user.is_admin:
-        query = query.where(course_models.Course.divisions in user.divisions)
     query = await db.execute(query)
     course = query.scalar()
     if not course:
@@ -72,8 +68,8 @@ async def update_course(id: int, course: course_schemas.CourseCreate, user: user
     return course
 
 
-async def delete_course(id: int, user: user_models.User, db: AsyncSession):
-    await get_one_course(id, user, db)
+async def delete_course(id: int, db: AsyncSession):
+    await get_one_course(id, db)
     await db.execute(
     	delete(course_models.Course).
         where(course_models.Course.id == id)
