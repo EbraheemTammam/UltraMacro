@@ -56,6 +56,6 @@ class Course(Base):
     semester = Column(Integer, nullable=False)
     required = Column(Boolean, nullable=False)
 
-    divisions = relationship("Division", secondary=CourseDivisions)
+    divisions = relationship("Division", secondary=CourseDivisions, back_populates='courses')
 
 

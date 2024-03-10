@@ -17,6 +17,7 @@ from sqlalchemy_utils import EmailType, URLType
 
 from database import Base
 from models.user import UserDivisions
+from models.course import CourseDivisions
 
 
 class Division(Base):
@@ -55,3 +56,4 @@ class Division(Base):
 		back_populates='secondary_divisions'
 	)
 	users = relationship("User", secondary=UserDivisions, back_populates='divisions')
+	courses = relationship("Course", secondary=CourseDivisions, back_populates='divisions')
