@@ -55,7 +55,7 @@ async def create_regulations(
 #	get one regulation
 @regulation_router.get(
 	'/{id}',
-    response_model=regulation_schemas.Regulation | None,
+    response_model=regulation_schemas.Regulation,
     status_code=status.HTTP_200_OK
 )
 async def retreive_regulations(

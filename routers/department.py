@@ -54,7 +54,7 @@ async def create_departments(
 #	get one department
 @department_router.get(
 	'/{id}',
-    response_model=department_schemas.Department | None,
+    response_model=department_schemas.Department,
     status_code=status.HTTP_200_OK
 )
 async def retreive_departments(

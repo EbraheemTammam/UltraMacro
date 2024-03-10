@@ -59,7 +59,7 @@ async def create_divisions(
 #	get one division
 @division_router.get(
 	'/{id}',
-    response_model=division_schemas.Division | None,
+    response_model=division_schemas.Division,
     status_code=status.HTTP_200_OK
 )
 async def retreive_divisions(

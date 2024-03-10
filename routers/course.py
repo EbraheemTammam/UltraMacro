@@ -54,7 +54,7 @@ async def create_courses(
 #	get one course
 @course_router.get(
 	'/{id}',
-    response_model=course_schemas.Course | None,
+    response_model=course_schemas.Course,
     status_code=status.HTTP_200_OK
 )
 async def retreive_courses(

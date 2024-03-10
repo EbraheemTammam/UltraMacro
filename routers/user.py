@@ -57,7 +57,7 @@ async def create_users(
 #	get one user
 @user_router.get(
 	'/{id}',
-    response_model=user_schemas.User | None,
+    response_model=user_schemas.User,
     status_code=status.HTTP_200_OK
 )
 async def retreive_users(
