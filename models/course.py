@@ -25,7 +25,7 @@ CourseDivisions = Table(
 	Base.metadata,
     Column(
 		'course_id',
-		UUID(as_uuid=True),
+		Integer,
 		ForeignKey("courses.id", ondelete="CASCADE"),
 		primary_key=True,
 		index=True,
