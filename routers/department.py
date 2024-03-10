@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
+from authentication.permissions import has_permission
 from database import get_db, get_async_db
 import schemas.department as department_schemas
 import models.department as department_models
@@ -61,7 +62,8 @@ async def retreive_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await department_handlers.get_one_department(id, user, db)
+	await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
+	return await department_handlers.get_one_department(id, db)
 
 
 #	update department
@@ -75,7 +77,8 @@ async def update_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await department_handlers.update_department(id, department, user, db)
+	await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
+	return await department_handlers.update_department(id, department, db)
 
 
 #	delete department
@@ -88,4 +91,5 @@ async def delete_departments(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	await department_handlers.delete_department(id, user, db)
+	await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
+	await department_handlers.delete_department(id, db)

@@ -49,7 +49,7 @@ async def get_users(
 async def create_users(
 	user: user_schemas.UserCreate,
 	db: Annotated[AsyncSession, Depends(get_async_db)],
-	#current_user: Annotated[user_models.User, Depends(get_current_user)]
+	current_user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	return await user_handlers.create_user(user, db)
 

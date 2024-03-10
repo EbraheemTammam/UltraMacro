@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
+from authentication.permissions import has_permission
 from database import get_db, get_async_db
 import schemas.course as course_schemas
 import models.course as course_models
@@ -61,7 +62,8 @@ async def retreive_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await course_handlers.get_one_course(id, user, db)
+	await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
+	return await course_handlers.get_one_course(id, db)
 
 
 #	update course
@@ -75,7 +77,8 @@ async def update_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await course_handlers.update_course(id, course, user, db)
+	await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
+	return await course_handlers.update_course(id, course, db)
 
 
 #	delete course
@@ -88,5 +91,6 @@ async def delete_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await course_handlers.delete_course(id, user, db)
+	await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
+	return await course_handlers.delete_course(id, db)
 	

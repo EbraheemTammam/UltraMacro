@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
+from authentication.permissions import has_permission
 from database import get_db, get_async_db
 import schemas.student as student_schemas
 from models import (
@@ -62,13 +63,13 @@ async def create_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.create_student(student, user, db)
+	return await student_handlers.create_student(student, db)
 
 
 #	get one student
 @student_router.get(
 	'/{id}',
-    response_model=student_schemas.Student | None,
+    response_model=student_schemas.Student,
     status_code=status.HTTP_200_OK
 )
 async def retreive_students(
@@ -76,7 +77,8 @@ async def retreive_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.get_one_student(id, user, db)
+	await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
+	return await student_handlers.get_one_student(id, db)
 
 
 #	update student
@@ -90,7 +92,8 @@ async def update_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.update_student(id, student, user, db)
+	await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
+	return await student_handlers.update_student(id, student, db)
 
 
 #	delete student
@@ -103,4 +106,5 @@ async def delete_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await student_handlers.delete_student(id, user, db)
+	await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
+	return await student_handlers.delete_student(id, db)

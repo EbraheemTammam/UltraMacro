@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
+from authentication.permissions import has_permission
 from database import get_db, get_async_db
 import schemas.division as division_schemas
 from models import (
@@ -52,7 +53,7 @@ async def create_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.create_division(division, user, db)
+	return await division_handlers.create_division(division, db)
 
 
 #	get one division
@@ -66,7 +67,8 @@ async def retreive_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.get_one_division(id, user, db)
+	await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
+	return await division_handlers.get_one_division(id, db)
 
 
 #	update division
@@ -80,7 +82,8 @@ async def update_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.update_division(id, division, user, db)
+	await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
+	return await division_handlers.update_division(id, division, db)
 
 
 #	delete division
@@ -93,4 +96,5 @@ async def delete_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await division_handlers.delete_division(id, user, db)
+	await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
+	return await division_handlers.delete_division(id, db)

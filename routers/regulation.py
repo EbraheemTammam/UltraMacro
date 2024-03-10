@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
+from authentication.permissions import has_permission
 from database import get_db, get_async_db
 import schemas.regulation as regulation_schemas
 import models.regulation as regulation_models
@@ -62,7 +63,8 @@ async def retreive_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await regulation_handlers.get_one_regulation(id, user, db)
+	await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
+	return await regulation_handlers.get_one_regulation(id, db)
 
 
 #	update regulation
@@ -76,7 +78,8 @@ async def update_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await regulation_handlers.update_regulation(id, regulation, user, db)
+	await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
+	return await regulation_handlers.update_regulation(id, regulation, db)
 
 
 #	delete regulation
@@ -89,4 +92,5 @@ async def delete_regulations(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
-	return await regulation_handlers.delete_regulation(id, user, db)
+	await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
+	return await regulation_handlers.delete_regulation(id, db)
