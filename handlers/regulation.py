@@ -8,7 +8,8 @@ from sqlalchemy.orm import selectinload
 import schemas.regulation as regulation_schemas
 from models import (
     regulation as regulation_models,
-    user as user_models
+    user as user_models,
+    division as division_models
 )
 
 
@@ -17,7 +18,12 @@ from models import (
 async def get_all_regulations(user: user_models.User, db: AsyncSession):
     query = select(regulation_models.Regulation)
     if not user.is_admin:
-        query = query.where(regulation_models.Regulation.divisions in user.divisions)
+        query = query.where(
+            regulation_models.Regulation.id.in_(
+                select(division_models.Division.regulation_id).
+                where(division_models.Division.users.any(id=user.id))
+            )
+        )
     regulations = await db.execute(query)
     return regulations.scalars().all()
 

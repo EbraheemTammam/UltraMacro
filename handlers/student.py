@@ -1,5 +1,6 @@
 from uuid import UUID
 from fastapi import HTTPException, status
+from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete, String
@@ -38,9 +39,18 @@ async def get_all_students(user: user_models.User, db: AsyncSession, graduate: b
 	query = main_query()
 	if not user.is_admin:
 		query = query.where(
-			student_models.Student.group in user.divisions or
-			student_models.Student.division in user.divisions
+			or_(
+				student_models.Student.division_id.in_(
+					select(division_models.Division.id).
+					where(division_models.Division.users.any(id=user.id))
+				),
+				student_models.Student.group_id.in_(
+					select(division_models.Division.id).
+					where(division_models.Division.users.any(id=user.id))
+				)
+			)
 		)
+		print(query)
 	if graduate:
 		query = query.where(student_models.Student.graduate == True)
 	students = await db.execute(query)

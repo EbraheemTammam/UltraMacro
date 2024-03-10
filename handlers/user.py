@@ -53,13 +53,7 @@ async def create_user(user: user_schemas.UserCreate, db: AsyncSession):
 	await check_email_uniqueness(user.email, db)
 	query = await db.execute(
 		insert(user_models.User).
-		values({
-			'email': user.email,
-			'first_name': user.first_name,
-			'last_name': user.last_name,
-			'password': user.password,
-			'is_admin': user.is_admin,
-		}).
+		values({key: value for key, value in user.items() if key != "divisions"}).
 		returning(user_models.User).
 		options(
 			selectinload(user_models.User.divisions).
@@ -93,13 +87,7 @@ async def update_user(id: UUID, user: user_schemas.UserCreate, db: AsyncSession)
 	query = await db.execute(
 		update(user_models.User).
         where(user_models.User.id == id).
-        values({
-			'email': user.email,
-			'first_name': user.first_name,
-			'last_name': user.last_name,
-			'password': user.password,
-			'is_admin': user.is_admin,
-		}).
+        values({key: value for key, value in user.items() if key != "divisions"}).
         returning(user_models.User).
 		options(
 			selectinload(user_models.User.divisions).
