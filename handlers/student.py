@@ -1,6 +1,7 @@
+from typing import Optional
 from uuid import UUID
 from fastapi import HTTPException, status
-from sqlalchemy import or_
+from sqlalchemy import or_, and_, func, String
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete, String
@@ -10,9 +11,51 @@ import schemas.student as student_schemas
 from models import (
 	student as student_models,
 	division as division_models,
-	user as user_models
+	user as user_models,
+	enrollment as enrollment_models,
+	course as course_models
 )
-from handlers import division as division_handlers
+from handlers import (
+    division as division_handlers,
+    enrollment as enrollment_handlers
+)
+
+
+async def get_semester_detail(
+	student_id: Optional[UUID], 
+	level: Optional[int], 
+	semester: Optional[int],
+	db: AsyncSession
+):
+	enrollments = await enrollment_handlers.get_all_enrollments(student_id, level, semester, None, db)
+	total_points_query = (
+		select(func.sum(enrollment_models.Enrollment.points * course_models.Course.credit_hours)).
+		join(course_models.Course).
+		where(
+			and_(
+				enrollment_models.Enrollment.grade.in_(['A', 'B', 'C', 'D']),
+				enrollment_models.Enrollment.student_id==cast(str(student_id), String),
+				enrollment_models.Enrollment.course_id.in_(
+					select(course_models.Course.id).
+					where(
+						and_(
+							course_models.Course.level==level,
+							course_models.Course.semester==semester
+						)
+					)
+				)
+			)
+		)
+	)
+	result = await db.execute(total_points_query)
+	points = result.scalar()
+	return {'level': level, 'semester': semester, 'points': points, 'enrollments': enrollments}
+
+
+async def get_student_detail(id: UUID, db: AsyncSession):
+	student = await get_one_student(id, db)
+	details = [await get_semester_detail(id, l, s, db) for l in range(1, 5) for s in range(1, 4)]
+	return {'student': student, 'details': details}
 
 
 def main_query():
