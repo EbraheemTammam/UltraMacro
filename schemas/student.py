@@ -1,9 +1,9 @@
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 from schemas.division import Division
-
+from schemas.enrollment import Semester
 
 
 class StudentBase(BaseModel):
@@ -40,3 +40,8 @@ class Student(StudentBase):
 class GrduateStudent(Student):
     semester: int
     year: int
+
+
+class StudentDetail(BaseModel):
+    student: Student
+    details: List[Semester]
