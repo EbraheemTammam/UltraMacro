@@ -71,7 +71,7 @@ async def create_students(
 #	get one student
 @student_router.get(
 	'/{id}',
-    response_model=student_schemas.Student,
+    response_model=student_schemas.StudentDetail,
     status_code=status.HTTP_200_OK
 )
 async def retreive_students(
@@ -80,7 +80,7 @@ async def retreive_students(
 	user: Annotated[user_models.User, Depends(get_current_user)]
 ):
 	await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
-	return await student_handlers.get_one_student(id, db)
+	return await student_handlers.get_student_detail(id, db)
 
 
 #	update student
