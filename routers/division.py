@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 from fastapi import (
 	APIRouter,
 	Response,
@@ -37,9 +37,10 @@ division_router = APIRouter()
 )
 async def get_divisions(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	user: Annotated[user_models.User, Depends(get_current_user)],
+	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-    return await division_handlers.get_all_divisions(user, db)
+	return await division_handlers.get_all_divisions(regulation, user, db)
 
 
 #	create division

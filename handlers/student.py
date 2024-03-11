@@ -35,7 +35,7 @@ def main_query():
 	)
 
 
-async def get_all_students(user: user_models.User, db: AsyncSession, graduate: bool = False):
+async def get_all_students(regulation_id: int | None, user: user_models.User, db: AsyncSession, graduate: bool = False):
 	query = main_query()
 	if not user.is_admin:
 		query = query.where(
@@ -50,7 +50,19 @@ async def get_all_students(user: user_models.User, db: AsyncSession, graduate: b
 				)
 			)
 		)
-		print(query)
+	if regulation_id:
+		query = query.where(
+			or_(
+				student_models.Student.group_id.in_(
+					select(division_models.Division.id).
+					where(division_models.Division.regulation_id==regulation_id)
+				),
+				student_models.Student.division_id.in_(
+					select(division_models.Division.id).
+					where(division_models.Division.regulation_id==regulation_id)
+				)
+			)
+		)
 	if graduate:
 		query = query.where(student_models.Student.graduate == True)
 	students = await db.execute(query)

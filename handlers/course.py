@@ -15,7 +15,7 @@ from models import (
 
 
 
-async def get_all_courses(user: user_models.User, db: AsyncSession):
+async def get_all_courses(regulation_id: int | None, user: user_models.User, db: AsyncSession):
     query = (
         select(course_models.Course).
         options(
@@ -35,6 +35,18 @@ async def get_all_courses(user: user_models.User, db: AsyncSession):
                     course_models.CourseDivisions.columns.division_id.in_(
                         select(division_models.Division.id).
                         where(division_models.Division.users.any(id=user.id))
+                    )
+                )
+            )
+        )
+    if regulation_id:
+        query = query.where(
+            course_models.Course.id.in_(
+                select(course_models.CourseDivisions.columns.course_id).
+                where(
+                    course_models.CourseDivisions.columns.division_id.in_(
+                        select(division_models.Division.id).
+                        where(division_models.Division.regulation_id==regulation_id)
                     )
                 )
             )

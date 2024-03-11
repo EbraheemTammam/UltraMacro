@@ -32,9 +32,10 @@ course_router = APIRouter()
 )
 async def get_courses(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	user: Annotated[user_models.User, Depends(get_current_user)],
+	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-    return await course_handlers.get_all_courses(user, db)
+    return await course_handlers.get_all_courses(regulation, user, db)
 
 
 #	create course

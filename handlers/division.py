@@ -29,10 +29,12 @@ def main_query():
 	)
 
 
-async def get_all_divisions(user: user_models.User, db: AsyncSession):
+async def get_all_divisions(regulation_id: int | None, user: user_models.User, db: AsyncSession):
 	query = main_query()
 	if not user.is_admin:
 		query = query.where(division_models.Division.users.any(id=user.id))
+	if regulation_id:
+		query = query.where(division_models.Division.regulation_id==regulation_id)
 	divisions = await db.execute(query)
 	return divisions.scalars().all()
 

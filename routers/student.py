@@ -35,9 +35,10 @@ student_router = APIRouter()
 )
 async def get_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	user: Annotated[user_models.User, Depends(get_current_user)],
+	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-    return await student_handlers.get_all_students(user, db)
+    return await student_handlers.get_all_students(regulation, user, db)
 
 #	get all graduate students
 @student_router.get(
@@ -47,9 +48,10 @@ async def get_students(
 )
 async def get_graduate_students(
 	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	user: Annotated[user_models.User, Depends(get_current_user)],
+	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-    return await student_handlers.get_all_students(db=db, user=user, graduate=True)
+    return await student_handlers.get_all_students(regulation_id=regulation, db=db, user=user, graduate=True)
 
 
 #	create student
