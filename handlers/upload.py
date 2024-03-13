@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import insert, update, delete
+from sqlalchemy import insert, update, delete, and_
 from sqlalchemy.orm import selectinload
 
 from schemas import (
@@ -19,6 +19,7 @@ from handlers import (
 	division as division_handlers,
 	student as student_handlers,
 	course as course_handlers,
+	enrollment as enrollment_handlers,
 )
 
 
@@ -77,25 +78,9 @@ async def enrollment_upload(file: UploadFile, db: AsyncSession):
 			except:
 				response.append({'student': student.name, 'course': d['course'], 'status': 'course is not in the database'})
 				continue
-		enrollment = enrollment_models.Enrollment(
-			{
-				'seat_id': d['seat_id'],
-				'level': data['headers']['level'],
-				'semester': data['headers']['semester'],
-				'year': data['headers']['year'],
-				'month': data['headers']['month'],
-				'mark': d['mark'],
-				'full_mark': d['full_mark'],
-				'grade': d['grade'],
-				'points': (
-					(int(d['mark']) / (course.credit_hours * 10)) - 5 
-					if d['grade'] in ['A', 'B', 'C', 'D'] and course.credit_hours != 0
-					else 0
-				),
-				'student_id': student.id,
-				'course_id': course.id,
-			}
-		)
+		enrollment = await enrollment_handlers.enrollment_get_or_create(data['headers'], d, student, course, db)
+		if not enrollment:
+			response.append({'student': student.name, 'course': course.name, 'status': 'enrollment already exists'})
 		db.add(enrollment)
 		response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
 	await db.commit()
