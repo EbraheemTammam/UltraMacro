@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 from fastapi import HTTPException, status
-from sqlalchemy import or_, and_, func, String
+from sqlalchemy import or_, and_, func, String, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete, String
@@ -55,7 +55,31 @@ async def get_semester_detail(
 async def get_student_detail(id: UUID, db: AsyncSession):
 	student = await get_one_student(id, db)
 	details = [await get_semester_detail(id, l, s, db) for l in range(1, 5) for s in range(1, 4)]
-	return {'student': student, 'details': details}
+	return {
+		'regulation': student.division.regulation.name if student.division else student.group.regulation.name,
+		'department_1': (
+			student.division.department_1.name 
+			if student.division and student.division.department_1
+			else (
+				student.group.department_1.name
+				if student.group.department_1
+				else None
+			)
+		),
+		'department_2': (
+			student.division.department_2.name 
+			if student.division and student.division.department_2
+			else (
+				student.group.department_2.name
+				if student.group.department_2
+				else None
+			)
+		),
+		'group': student.group.name,
+		'division': student.division.name if student.division else None,
+		**{key: val for key, val in student.__dict__.items() if key not in ['group', 'division']}, 
+		'details': details
+	}
 
 
 def main_query():
@@ -141,7 +165,6 @@ async def create_student(student: student_schemas.StudentCreate, db: AsyncSessio
 	await db.refresh(student)
 	return student
 
-from sqlalchemy import Text, cast
 
 async def get_one_student(id: UUID, db: AsyncSession):
 	query = main_query().where(student_models.Student.id==cast(str(id), String))
@@ -153,6 +176,33 @@ async def get_one_student(id: UUID, db: AsyncSession):
 		detail=f"no student with given id: {id}",
 		status_code=status.HTTP_404_NOT_FOUND
 	)
+
+
+async def get_student_by_name(name: str, db: AsyncSession):
+	query = main_query().where(student_models.Student.name==name)
+	query = await db.execute(query)
+	student = query.scalar()
+	if student:
+		return student
+	raise HTTPException(
+		detail=f"no student with given name: {name}",
+		status_code=status.HTTP_404_NOT_FOUND
+	)
+
+
+async def get_student_by_name_and_division(name: str, division: division_models.Division, db: AsyncSession):
+	try:
+		student = await get_student_by_name(name, db)
+		if not (division.group or division.private):
+			student.division = division
+	except:
+		if not (division.group or division.private):
+			return None
+		student = student_models.Student(name=name)
+	finally:
+		db.add(student)
+		await db.commit()
+		await db.refresh(student)
 
 
 async def update_student(id: UUID, student: student_schemas.StudentCreate, db: AsyncSession):
