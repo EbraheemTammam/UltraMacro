@@ -72,6 +72,18 @@ async def get_one_division(id: int, db: AsyncSession):
 	)
 
 
+async def get_division_by_name(name: str, db: AsyncSession):
+	query = main_query().where(division_models.Division.name == name)
+	query = await db.execute(query)
+	division = query.scalar()
+	if division:
+		return division
+	raise HTTPException(
+		detail=f"no division with given name: {name}",
+		status_code=status.HTTP_404_NOT_FOUND
+	)
+
+
 async def update_division(id: int, division: division_schemas.DivisionCreate, db: AsyncSession):
 	await regulation_handlers.get_one_regulation(division.regulation_id, db)
 	await department_handlers.get_one_department(division.department_1_id, db)
