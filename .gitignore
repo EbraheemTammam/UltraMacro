@@ -2,3 +2,4 @@ Pipfile*
 *cache*
 .env
 *.sqlite3
+check_upload
