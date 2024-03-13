@@ -4,8 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import routers
 
 origins = [
-	'http://localhost',
+    'http://localhost',
     'http://127.0.0.1',
+	'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
 ]
 
 app = FastAPI(
@@ -28,3 +32,4 @@ app.include_router(routers.division_router, prefix='/divisions', tags=['division
 app.include_router(routers.user_router, prefix='/accounts', tags=['users'])
 app.include_router(routers.course_router, prefix='/courses', tags=['courses'])
 app.include_router(routers.student_router, prefix='/students', tags=['students'])
+app.include_router(routers.upload_router, prefix='/data', tags=['uploads'])
