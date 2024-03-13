@@ -53,10 +53,22 @@ async def get_one_department(id: int, db: AsyncSession):
     if department:
         return department
     raise HTTPException(
-    	detail="no department with given id",
+    	detail=f"no department with given id: {id}",
     	status_code=status.HTTP_404_NOT_FOUND
     )
 
+
+async def get_department_by_name(name: str, db: AsyncSession):
+    department = await db.execute(
+        select(department_models.Department).
+        where(department_models.Department.name==name)
+    )
+    if department:
+        return department
+    raise HTTPException(
+    	detail=f"no department with given name: {name}",
+    	status_code=status.HTTP_404_NOT_FOUND
+    )
 
 async def update_department(id: int, department: department_schemas.DepartmentCreate, db: AsyncSession):
     query = (
