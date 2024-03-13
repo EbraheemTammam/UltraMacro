@@ -57,19 +57,6 @@ async def enrollment_upload(file: UploadFile, db: AsyncSession):
 		if not student:
 			response.append({'student': d['student'], 'course': d['course'], 'status': 'first year data does not exist'})
 			continue
-		# try:
-		# 	student = await student_handlers.get_student_by_name(d['student'], db)
-		# 	if not (division.group or division.private):
-		# 		student.division = division
-		# except:
-		# 	if not (division.group or division.private):
-		# 		response.append({'student': d['student'], 'course': d['course'], 'status': 'first year data does not exist'})
-		# 		continue
-		# 	student = student_models.Student(name=d['student'])
-		# finally:
-		# 	db.add(student)
-		# 	await db.commit()
-		# 	await db.refresh(student)
 		try:
 			course = await course_handlers.get_course_by_code_and_divisions(d['code'], [student.group, student.division], db)
 		except:
