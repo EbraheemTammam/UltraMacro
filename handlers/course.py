@@ -1,7 +1,8 @@
+from typing import List
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import insert, update, delete
+from sqlalchemy import insert, update, delete, and_
 from sqlalchemy.orm import selectinload
 
 
@@ -82,18 +83,6 @@ async def create_course(course: course_schemas.CourseCreate, db: AsyncSession):
 
 
 async def get_one_course(id: int, db: AsyncSession):
-    # course = await db.get(
-    #     course_models.Course, 
-    #     id,
-    #     options=[
-    #         selectinload(course_models.Course.divisions).
-    #         options(
-    #             selectinload(division_models.Division.regulation),
-    #             selectinload(division_models.Division.department_1),
-    #             selectinload(division_models.Division.department_2),
-    #         )
-    #     ]
-    # )
     query = (
     	select(course_models.Course).
         where(course_models.Course.id == id).
@@ -115,6 +104,40 @@ async def get_one_course(id: int, db: AsyncSession):
     	status_code=status.HTTP_404_NOT_FOUND
     )
 
+
+async def get_course_by_code(code: str, db: AsyncSession):
+    query = (
+    	select(course_models.Course).
+        where(course_models.Course.code == code)
+    )
+    course = await db.execute(query)
+    course = course.scalars().first()
+    if course:
+        return course
+    raise HTTPException(
+    	detail=f"no course with given code: {code}",
+    	status_code=status.HTTP_404_NOT_FOUND
+    )
+
+
+async def get_course_by_code_and_divisions(code: str, divisions: List[division_models.Division], db: AsyncSession):
+    query = (
+    	select(course_models.Course).
+        where(
+            and_(
+                course_models.Course.code == code,
+                course_models.Course.divisions.any(d.id for d in divisions)
+            )
+        )
+    )
+    course = await db.execute(query)
+    course = course.scalar()
+    if course:
+        return course
+    raise HTTPException(
+    	detail=f"no course with given code or divisions: {code}",
+    	status_code=status.HTTP_404_NOT_FOUND
+    )
 
 async def update_course(id: int, course: course_schemas.CourseCreate, db: AsyncSession):
     existing_course = await get_one_course(id, db)
