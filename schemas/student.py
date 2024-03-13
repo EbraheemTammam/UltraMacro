@@ -42,6 +42,11 @@ class GrduateStudent(Student):
     year: int
 
 
-class StudentDetail(BaseModel):
-    student: Student
+class StudentDetail(StudentBase):
+    regulation: str | None
+    department_1: str | None
+    department_2: str | None
+    group: str
+    division: str | None
+    id: UUID
     details: List[Semester]
