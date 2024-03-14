@@ -112,7 +112,6 @@ class UploadHandler:
 			self.db.add(enrollment)
 			await self.enrollment_handler.post_create(enrollment, student, course)
 			await self.student_handler.post_add_enrollment(student)
-			#		post create login goes here
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
 		await self.db.commit()
 		return response
