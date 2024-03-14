@@ -23,13 +23,23 @@ from handlers import (
 )
 
 
-async def division_upload(file: UploadFile, db: AsyncSession):
+async def division_upload(file: UploadFile, regulation_id: int, db: AsyncSession):
 	content = await file.read()
 	data = await xl_handlers.extract_divisions(content)
 	for d in data:
-		d['department_1_id'] = await department_handlers.get_department_by_name(d['department_1_id']).id
-		d['department_2_id'] = await department_handlers.get_department_by_name(d['department_2_id']).id
-		division = division_models.Division(d)
+		d['regulation_id'] = regulation_id
+		d['regulation_id'] = 1
+		try:
+			d1 = await department_handlers.get_department_by_name(d['department_1_id'], db)
+			d['department_1_id'] = d1.id
+		except:
+			d['department_1_id'] = None
+		try:
+			d2 = await department_handlers.get_department_by_name(d['department_2_id'], db)
+			d['department_2_id'] = d2.id
+		except:
+			d['department_2_id'] = None
+		division = division_models.Division(**d)
 		db.add(division)
 	await db.commit()
 	return data
@@ -39,7 +49,7 @@ async def course_upload(file: UploadFile, db: AsyncSession):
 	content = await file.read()
 	data = await xl_handlers.extract_courses(content)
 	for d in data:
-		course = course_models.Course({key: value for key, value in d.items() if key != 'division'})
+		course = course_models.Course(**{key: value for key, value in d.items() if key != 'division'})
 		db.add(course)
 		division = await division_handlers.get_division_by_name(d['division'], db)
 		course.divisions.append(division)
@@ -50,7 +60,7 @@ async def course_upload(file: UploadFile, db: AsyncSession):
 async def enrollment_upload(file: UploadFile, db: AsyncSession):
 	content = await file.read()
 	data = await xl_handlers.final_dict(content)
-	division = await division_handlers.get_division_by_name(data['headers']['division'])
+	division = await division_handlers.get_division_by_name(data['headers']['division'], db)
 	response = []
 	for d in data['content']:
 		student = await student_handlers.get_student_by_name_and_division(d['student'], division, db)
@@ -68,7 +78,9 @@ async def enrollment_upload(file: UploadFile, db: AsyncSession):
 		enrollment = await enrollment_handlers.enrollment_get_or_create(data['headers'], d, student, course, db)
 		if not enrollment:
 			response.append({'student': student.name, 'course': course.name, 'status': 'enrollment already exists'})
+			continue
 		db.add(enrollment)
+		#		post create login goes here
 		response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
 	await db.commit()
 	return data['headers']
