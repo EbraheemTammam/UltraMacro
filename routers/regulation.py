@@ -19,7 +19,7 @@ from database import get_db, get_async_db
 import schemas.regulation as regulation_schemas
 import models.regulation as regulation_models
 import models.user as user_models
-import handlers.regulation as regulation_handlers
+from handlers.regulation import RegulationHandler
 
 
 regulation_router = APIRouter()
@@ -32,10 +32,9 @@ regulation_router = APIRouter()
     status_code=status.HTTP_200_OK
 )
 async def get_regulations(
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-    return await regulation_handlers.get_all_regulations(user, db)
+    return await handler.get_all()
 
 
 #	create regulation
@@ -46,10 +45,9 @@ async def get_regulations(
 )
 async def create_regulations(
 	regulation: regulation_schemas.RegulationCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-	return await regulation_handlers.create_regulation(regulation, db)
+	return await handler.create(regulation)
 
 
 #	get one regulation
@@ -60,11 +58,10 @@ async def create_regulations(
 )
 async def retreive_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-	await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
-	return await regulation_handlers.get_one_regulation(id, db)
+	#await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
+	return await handler.get_one(id)
 
 
 #	update regulation
@@ -75,11 +72,10 @@ async def retreive_regulations(
 async def update_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be updated')],
 	regulation: regulation_schemas.RegulationCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-	await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
-	return await regulation_handlers.update_regulation(id, regulation, db)
+	#await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
+	return await handler.update(id, regulation)
 
 
 #	delete regulation
@@ -89,8 +85,7 @@ async def update_regulations(
 )
 async def delete_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-	await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
-	return await regulation_handlers.delete_regulation(id, db)
+	#await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
+	return await handler.delete(id)
