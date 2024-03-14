@@ -20,10 +20,7 @@ from models import (
 	student as student_models,
 	user as user_models
 )
-from handlers import (
-	student as student_handlers,
-	course as course_handlers
-)
+from handlers.course import CourseHandler
 
 
 
@@ -34,9 +31,11 @@ class EnrollmentHandler:
 		self, 
 		user: user_models.User = Depends(get_current_user), 
 		db: AsyncSession = Depends(get_async_db),
+		course_handler: CourseHandler = Depends(CourseHandler)
 	) -> None:
 		self.user = user
 		self.db = db
+		self.course_handler = course_handler
 		self.model = enrollment_models.Enrollment
 		self.NotFoundException = EnrollmentNotFoundException()
 		self.retrieve_query = (
@@ -53,13 +52,24 @@ class EnrollmentHandler:
 		level: Optional[int], 
 		semester: Optional[int],
 		course_id: Optional[int],
-		execuse: bool = True
+		only_passed: bool = False,
+		excuse: bool = True,
 	):
 		query = self.retrieve_query
-		if not execuse:
+		if not excuse:
 			query = query.where(self.model.grade!='عذر')
+		if only_passed:
+			query = query.where(
+				or_(
+					self.model.grade.in_(['A', 'B', 'C', 'D']),
+					and_(
+						self.model.grade=='بح',
+						self.model.mark==0
+					)
+				)
+			)
 		if student_id:
-			query = query.where(self.model.student_id==cast(str(student_id), String))
+			query = query.where(self.model.student_id==student_id)
 		if level:
 			query = query.where(
 				self.model.course_id.in_(
@@ -99,6 +109,28 @@ class EnrollmentHandler:
 		await self.db.commit()
 		await self.db.refresh(new_enrollment)
 		return new_enrollment
+	
+
+	async def post_create(self, enrollment: enrollment_models.Enrollment, student: student_models.Student, course: course_models.Course):
+		if course.credit_hours == 0: return
+		#   check if research
+		if enrollment.grade == 'بح' and enrollment.mark == 0:
+			student.research_hours += course.credit_hours
+			student.passed_hours += course.credit_hours
+			student.registered_hours += course.credit_hours
+		#   check if passed course
+		elif enrollment.grade in ['A', 'B', 'C', 'D']:
+			enrollments = await self.get_all(student.id, None, None, course.id)
+			count = len(enrollments) + 1
+			if count > 2:
+				student.excluded_hours += (count - 2) * course.credit_hours
+			student.registered_hours += count * course.credit_hours
+			student.passed_hours += course.credit_hours
+			student.total_points += enrollment.points * course.credit_hours
+			student.total_mark += (enrollments[0].mark + enrollments[-1].mark) / 2 if enrollments else enrollment.mark
+
+		self.db.add(student)
+		await self.db.commit()
 
 
 	async def get_one(self, id: UUID):
@@ -143,11 +175,11 @@ class EnrollmentHandler:
 				'semester': headers['semester'],
 				'year': headers['year'],
 				'month': headers['month'],
-				'mark': enrollment['mark'],
+				'mark': float(enrollment['mark']),
 				'full_mark': enrollment['full_mark'],
 				'grade': enrollment['grade'],
 				'points': (
-					(int(enrollment['mark']) / (course.credit_hours * 10)) - 5 
+					(float(enrollment['mark']) / (course.credit_hours * 10)) - 5 
 					if enrollment['grade'] in ['A', 'B', 'C', 'D'] and course.credit_hours != 0
 					else 0
 				),

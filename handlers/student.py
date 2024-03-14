@@ -23,6 +23,7 @@ from models import (
 )
 from handlers.division import DivisionHandler
 from handlers.enrollment import EnrollmentHandler
+from handlers.course import CourseHandler
 
 
 
@@ -34,7 +35,8 @@ class StudentHandler:
 		user: user_models.User = Depends(get_current_user), 
 		db: AsyncSession = Depends(get_async_db),
 		division_handler: DivisionHandler = Depends(DivisionHandler),
-		enrollment_handler: EnrollmentHandler = Depends(EnrollmentHandler)
+		enrollment_handler: EnrollmentHandler = Depends(EnrollmentHandler),
+		course_handler: CourseHandler = Depends(CourseHandler)
 	) -> None:
 		self.user = user
 		self.db = db
@@ -42,6 +44,7 @@ class StudentHandler:
 		self.model = student_models.Student
 		self.division_handler = division_handler
 		self.enrollment_handler = enrollment_handler
+		self.course_handler = course_handler
 		self.retrieve_query = (
 			select(self.model).
 			options(
@@ -260,3 +263,42 @@ class StudentHandler:
 			**{key: val for key, val in student.__dict__.items() if key not in ['group', 'division']}, 
 			'details': details
 		}
+	
+
+	async def check_graduation(self, student: student_models.Student):
+		group = await self.db.get(division_models.Division, student.group_id)
+		division = await self.db.get(division_models.Division, student.division_id)
+		if group.group and not division:
+			return False
+		passed_enrollments = self.enrollment_handler.get_all(student.id, None, None, None, True, False)
+		if self.course_handler.check_required_and_not_passed(group.id, passed_enrollments):
+			return False
+		elif division:
+			if self.course_handler.check_required_and_not_passed(division.id, passed_enrollments):
+				return False
+		if student.gpa < 1:
+			return False
+		return True
+	
+
+	async def post_add_enrollment(self, student: student_models.Student):
+		#	check level
+		if student.passed_hours > 98:
+			student.level = 4
+		elif student.passed_hours > 62:
+			student.level = 3
+		elif student.passed_hours > 28:
+			student.level = 2
+		#	check graduation
+		if student.level < 4:
+			return
+		group = await self.db.get(division_models.Division, student.group_id)
+		division = await self.db.get(division_models.Division, student.division_id)
+		if group.private and (student.passed_hours < group.hours):
+			return
+		elif (not student.division) or (student.passed_hours < division.hours):
+			return
+		student.graduate = self.check_graduation(student)
+		self.db.add(student)
+		await self.db.commit()
+		return
