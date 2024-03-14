@@ -4,6 +4,12 @@ from fastapi import HTTPException, status
 
 
 
+class UnAuthorizedException(HTTPException):
+
+    def __init__(self) -> None:
+        super().__init__(status.HTTP_401_UNAUTHORIZED, "Un Authorized")
+
+
 
 class NotFoundException(HTTPException):
 
