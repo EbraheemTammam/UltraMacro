@@ -86,23 +86,23 @@ async def enrollment_get_or_create(
 		select(enrollment_models.Enrollment).
 		where(
 			and_(
-				enrollment_models.Enrollment.seat_id==enrollment['seat_id'],
-				enrollment_models.Enrollment.level==headers['level'],
-				enrollment_models.Enrollment.semester==headers['semester'],
-				enrollment_models.Enrollment.year==headers['year'],
-				enrollment_models.Enrollment.month==headers['month'],
-				enrollment_models.Enrollment.mark==enrollment['mark'],
+				enrollment_models.Enrollment.seat_id==enrollment.get('seat_id'),
+				enrollment_models.Enrollment.level==headers.get('level'),
+				enrollment_models.Enrollment.semester==headers.get('semester'),
+				enrollment_models.Enrollment.year==headers.get('year'),
+				enrollment_models.Enrollment.month==headers.get('month'),
+				enrollment_models.Enrollment.mark==enrollment.get('mark'),
 				enrollment_models.Enrollment.student_id==student.id,
 				enrollment_models.Enrollment.course_id==course.id,
 			)
 		)
 	)
 	result = await db.execute(query)
-	enrollment = result.scalar()
-	if enrollment:
+	existing_enrollment = result.scalar()
+	if existing_enrollment:
 		return None
-	enrollment = enrollment_models.Enrollment(
-		{
+	new_enrollment = enrollment_models.Enrollment(
+		**{
 			'seat_id': enrollment['seat_id'],
 			'level': headers['level'],
 			'semester': headers['semester'],
@@ -120,7 +120,7 @@ async def enrollment_get_or_create(
 			'course_id': course.id,
 		}
 	)
-	return enrollment
+	return new_enrollment
 
 
 async def update_enrollment(id: UUID, enrollment: enrollment_schemas.EnrollmentCreate, db: AsyncSession):
