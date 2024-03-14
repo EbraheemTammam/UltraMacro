@@ -167,7 +167,7 @@ async def create_student(student: student_schemas.StudentCreate, db: AsyncSessio
 
 
 async def get_one_student(id: UUID, db: AsyncSession):
-	query = main_query().where(student_models.Student.id==cast(str(id), String))
+	query = main_query().where(student_models.Student.id==id)
 	query = await db.execute(query)
 	student = query.scalar()
 	if student:
@@ -198,11 +198,11 @@ async def get_student_by_name_and_division(name: str, division: division_models.
 	except:
 		if not (division.group or division.private):
 			return None
-		student = student_models.Student(name=name)
-	finally:
+		student = student_models.Student(name=name, group_id=division.id)
 		db.add(student)
-		await db.commit()
-		await db.refresh(student)
+	await db.commit()
+	await db.refresh(student)
+	return student
 
 
 async def update_student(id: UUID, student: student_schemas.StudentCreate, db: AsyncSession):
