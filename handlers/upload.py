@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import HTTPException, status, UploadFile, File, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -109,7 +110,9 @@ class UploadHandler:
 				response.append({'student': student.name, 'course': course.name, 'status': 'enrollment already exists'})
 				continue
 			self.db.add(enrollment)
+			await self.enrollment_handler.post_create(enrollment, student, course)
+			await self.student_handler.post_add_enrollment(student)
 			#		post create login goes here
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
 		await self.db.commit()
-		return data['headers']
+		return response
