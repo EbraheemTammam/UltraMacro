@@ -1,8 +1,13 @@
 import pytest
 
+from .test_regulation import test_create_regulation
+from .test_department import test_create_department
+from .test_division import test_create_division
+
 
 @pytest.fixture
-def test_create_course(authorized_client):
+def test_create_course(authorized_client, test_create_division):
+    division = test_create_division
     res = authorized_client.post(
         '/courses',
         json={
@@ -14,23 +19,27 @@ def test_create_course(authorized_client):
             "level": 1,
             "semester": 1,
             "required": True,
+            "divisions": [division['id']]
         }
     )
     assert res.status_code == 201
-    assert res.json()["code"] == "TEST12"
-    assert res.json()["name"] == "test course"
-    assert res.json()["lecture_hours"] == 2
-    assert res.json()["practical_hours"] == 1
-    assert res.json()["credit_hours"] == 3
-    assert res.json()["level"] == 1
-    assert res.json()["semester"] == 1
-    assert res.json()["required"] == True
-    return res.json()
+    res = res.json()
+    assert res["code"] == "TEST12"
+    assert res["name"] == "test course"
+    assert res["lecture_hours"] == 2
+    assert res["practical_hours"] == 1
+    assert res["credit_hours"] == 3
+    assert res["level"] == 1
+    assert res["semester"] == 1
+    assert res["required"] == True
+    assert res["divisions"][0]["id"] == division["id"]
+    return res
 
 
-def test_get_all_courses(authorized_client):
+def test_get_all_courses(authorized_client, test_create_regulation):
+    regulation = test_create_regulation
     res = authorized_client.get(
-        '/courses',
+        f'/courses?regulation={regulation["id"]}',
     )
     assert res.status_code == 200
 
@@ -50,7 +59,8 @@ def test_get_non_existing_course(authorized_client):
     assert res.status_code == 404
 
 
-def test_update_course(authorized_client, test_create_course):
+def test_update_course(authorized_client, test_create_course, test_create_division):
+    division = test_create_division
     course = {
         **test_create_course,
         "code": "12TEST",
@@ -61,20 +71,23 @@ def test_update_course(authorized_client, test_create_course):
         "level": 2,
         "semester": 2,
         "required": False,
+        "divisions": [division["id"]]
     }
     res = authorized_client.put(
         f'/courses/{course["id"]}',
         json=course
     )
     assert res.status_code == 200
-    assert res.json()["code"] == "12TEST"
-    assert res.json()["name"] == "updated course"
-    assert res.json()["lecture_hours"] == 2
-    assert res.json()["practical_hours"] == 0
-    assert res.json()["credit_hours"] == 2
-    assert res.json()["level"] == 2
-    assert res.json()["semester"] == 2
-    assert res.json()["required"] == False
+    res = res.json()
+    assert res["code"] == "12TEST"
+    assert res["name"] == "updated course"
+    assert res["lecture_hours"] == 2
+    assert res["practical_hours"] == 0
+    assert res["credit_hours"] == 2
+    assert res["level"] == 2
+    assert res["semester"] == 2
+    assert res["required"] == False
+    assert res["divisions"][0]["id"] == division["id"]
 
 
 def test_update_non_exisitng_course(authorized_client):
@@ -87,9 +100,10 @@ def test_update_non_exisitng_course(authorized_client):
         "level": 2,
         "semester": 2,
         "required": False,
+        "divisions": []
     }
     res = authorized_client.put(
-        '/courses/1000',
+        '/courses/-1',
         json=course
     )
     assert res.status_code == 404
