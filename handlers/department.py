@@ -59,10 +59,11 @@ async def get_one_department(id: int, db: AsyncSession):
 
 
 async def get_department_by_name(name: str, db: AsyncSession):
-    department = await db.execute(
+    query = await db.execute(
         select(department_models.Department).
         where(department_models.Department.name==name)
     )
+    department = query.scalar()
     if department:
         return department
     raise HTTPException(
