@@ -19,7 +19,7 @@ from database import get_db, get_async_db
 import schemas.department as department_schemas
 import models.department as department_models
 import models.user as user_models
-import handlers.department as department_handlers
+from handlers.department import DepartmentHandler
 
 
 department_router = APIRouter()
@@ -31,10 +31,9 @@ department_router = APIRouter()
     status_code=status.HTTP_200_OK
 )
 async def get_departments(
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DepartmentHandler, Depends(DepartmentHandler)]
 ):
-    return await department_handlers.get_all_departments(user, db)
+    return await handler.get_all()
 
 
 #	create department
@@ -45,10 +44,9 @@ async def get_departments(
 )
 async def create_departments(
 	department: department_schemas.DepartmentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DepartmentHandler, Depends(DepartmentHandler)]
 ):
-	return await department_handlers.create_department(department, db)
+	return await handler.create(department)
 
 
 #	get one department
@@ -59,11 +57,10 @@ async def create_departments(
 )
 async def retreive_departments(
 	id: Annotated[int, Path(..., title='id of department to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DepartmentHandler, Depends(DepartmentHandler)]
 ):
-	await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
-	return await department_handlers.get_one_department(id, db)
+	#await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
+	return await handler.get_one(id)
 
 
 #	update department
@@ -74,11 +71,10 @@ async def retreive_departments(
 async def update_departments(
 	id: Annotated[int, Path(..., title='id of department to be updated')],
 	department: department_schemas.DepartmentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DepartmentHandler, Depends(DepartmentHandler)]
 ):
-	await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
-	return await department_handlers.update_department(id, department, db)
+	#await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
+	return await handler.update(id, department)
 
 
 #	delete department
@@ -88,8 +84,7 @@ async def update_departments(
 )
 async def delete_departments(
 	id: Annotated[int, Path(..., title='id of department to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DepartmentHandler, Depends(DepartmentHandler)]
 ):
-	await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
-	await department_handlers.delete_department(id, db)
+	#await has_permission(user=user, class_=department_models.Department, object_id=id, db=db)
+	await handler.delete(id)

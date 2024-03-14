@@ -1,9 +1,14 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
+
+
+from authentication.oauth2 import get_current_user
+from database import get_async_db
+from exceptions import DepartmentNotFoundException
 
 
 import schemas.department as department_schemas
@@ -14,87 +19,83 @@ from models import (
 )
 
 
+class DepartmentHandler:
 
-
-async def get_all_departments(user: user_models.User, db: AsyncSession):
-    query = select(department_models.Department)
-    if not user.is_admin:
-        query = query.where(
-            or_(
-                department_models.Department.id.in_(
-                    select(division_models.Division.department_1_id).
-                    where(division_models.Division.users.any(id=user.id))
-                ),
-                department_models.Department.id.in_(
-                    select(division_models.Division.department_2_id).
-                    where(division_models.Division.users.any(id=user.id))
+    def __init__(self, user: user_models.User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)) -> None:
+        self.user = user
+        self.db = db
+        self.model = department_models.Department
+        self.NotFoundException = DepartmentNotFoundException()
+        self.retrieve_query = select(self.model)
+        if not user.is_admin:
+            self.retrieve_query = self.retrieve_query.where(
+                or_(
+                    self.model.id.in_(
+                        select(division_models.Division.department_1_id).
+                        where(division_models.Division.users.any(id=user.id))
+                    ),
+                    self.model.id.in_(
+                        select(division_models.Division.department_2_id).
+                        where(division_models.Division.users.any(id=user.id))
+                    )
                 )
             )
+
+    async def get_all(self):
+        divisions = await self.db.execute(self.retrieve_query)
+        return divisions.scalars().all()
+
+
+    async def create(self, department: department_schemas.DepartmentCreate):
+        query = await self.db.execute(
+            insert(self.model).
+            values(**department.dict()).
+            returning(self.model)
         )
-        print(query)
-    divisions = await db.execute(query)
-    return divisions.scalars().all()
-
-
-async def create_department(department: department_schemas.DepartmentCreate, db: AsyncSession):
-    query = await db.execute(
-    	insert(department_models.Department).
-    	values(**department.dict()).
-    	returning(department_models.Department)
-    )
-    department = query.scalar_one()
-    await db.commit()
-    await db.refresh(department)
-    return department
-
-
-async def get_one_department(id: int, db: AsyncSession):
-    department = await db.get(department_models.Department, id)
-    if department:
+        department = query.scalar_one()
+        await self.db.commit()
+        await self.db.refresh(department)
         return department
-    raise HTTPException(
-    	detail=f"no department with given id: {id}",
-    	status_code=status.HTTP_404_NOT_FOUND
-    )
 
 
-async def get_department_by_name(name: str, db: AsyncSession):
-    query = await db.execute(
-        select(department_models.Department).
-        where(department_models.Department.name==name)
-    )
-    department = query.scalar()
-    if department:
+    async def get_one(self, id: int):
+        department = await self.db.get(self.model, id)
+        if department:
+            return department
+        raise self.NotFoundException
+
+
+    async def get_by_name(self, name: str):
+        query = await self.db.execute(
+            select(self.model).
+            where(self.model.name==name)
+        )
+        department = query.scalar()
+        if department:
+            return department
+        raise self.NotFoundException
+
+    async def update(self, id: int, department: department_schemas.DepartmentCreate):
+        query = (
+            update(self.model).
+            where(self.model.id == id).
+            values({**department.dict()}).
+            returning(self.model)
+        )
+        department = await self.db.execute(query)
+        department = department.scalar()
+        if not department:
+            raise self.NotFoundException
+        await self.db.commit()
+        await self.db.refresh(department)
         return department
-    raise HTTPException(
-    	detail=f"no department with given name: {name}",
-    	status_code=status.HTTP_404_NOT_FOUND
-    )
-
-async def update_department(id: int, department: department_schemas.DepartmentCreate, db: AsyncSession):
-    query = (
-    	update(department_models.Department).
-        where(department_models.Department.id == id).
-        values({**department.dict()}).
-        returning(department_models.Department)
-    )
-    department = await db.execute(query)
-    department = department.scalar()
-    if not department:
-        raise HTTPException(
-        detail="no department with given id",
-        status_code=status.HTTP_404_NOT_FOUND
-    )
-    await db.commit()
-    await db.refresh(department)
-    return department
 
 
-async def delete_department(id: int, db: AsyncSession):
-    await get_one_department(id, db)
-    await db.execute(
-    	delete(department_models.Department).
-        where(department_models.Department.id == id)
-    )
-    await db.commit()
-    return
+    async def delete(self, id: int):
+        await self.get_one(id)
+        await self.db.execute(
+            delete(self.model).
+            where(self.model.id == id)
+        )
+        await self.db.commit()
+        return
