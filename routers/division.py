@@ -23,7 +23,7 @@ from models import (
 	department as department_models,
 	user as user_models
 )
-import handlers.division as division_handlers
+from handlers.division import DivisionHandler
 
 
 division_router = APIRouter()
@@ -36,11 +36,10 @@ division_router = APIRouter()
     status_code=status.HTTP_200_OK
 )
 async def get_divisions(
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)],
+	handler: Annotated[DivisionHandler, Depends(DivisionHandler)],
 	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-	return await division_handlers.get_all_divisions(regulation, user, db)
+	return await handler.get_all(regulation)
 
 
 #	create division
@@ -51,10 +50,9 @@ async def get_divisions(
 )
 async def create_divisions(
 	division: division_schemas.DivisionCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DivisionHandler, Depends(DivisionHandler)],
 ):
-	return await division_handlers.create_division(division, db)
+	return await handler.create(division)
 
 
 #	get one division
@@ -65,11 +63,10 @@ async def create_divisions(
 )
 async def retreive_divisions(
 	id: Annotated[int, Path(..., title='id of division to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DivisionHandler, Depends(DivisionHandler)],
 ):
-	await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
-	return await division_handlers.get_one_division(id, db)
+	#await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
+	return await handler.get_one(id)
 
 
 #	update division
@@ -80,11 +77,10 @@ async def retreive_divisions(
 async def update_divisions(
 	id: Annotated[int, Path(..., title='id of division to be updated')],
 	division: division_schemas.DivisionCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DivisionHandler, Depends(DivisionHandler)],
 ):
-	await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
-	return await division_handlers.update_division(id, division, db)
+	#await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
+	return await handler.update(id, division)
 
 
 #	delete division
@@ -94,8 +90,7 @@ async def update_divisions(
 )
 async def delete_divisions(
 	id: Annotated[int, Path(..., title='id of division to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[DivisionHandler, Depends(DivisionHandler)],
 ):
-	await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
-	return await division_handlers.delete_division(id, db)
+	#await has_permission(user=user, class_=division_models.Division, object_id=id, db=db)
+	return await handler.delete(id)
