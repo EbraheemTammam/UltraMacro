@@ -19,7 +19,7 @@ from database import get_db, get_async_db
 import schemas.course as course_schemas
 import models.course as course_models
 import models.user as user_models
-import handlers.course as course_handlers
+from handlers.course import CourseHandler
 
 
 course_router = APIRouter()
@@ -31,11 +31,10 @@ course_router = APIRouter()
     status_code=status.HTTP_200_OK
 )
 async def get_courses(
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)],
+	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-    return await course_handlers.get_all_courses(regulation, user, db)
+    return await handler.get_all(regulation)
 
 
 #	create course
@@ -46,10 +45,9 @@ async def get_courses(
 )
 async def create_courses(
 	course: course_schemas.CourseCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 ):
-	return await course_handlers.create_course(course, db)
+	return await handler.create(course)
 
 
 #	get one course
@@ -60,11 +58,10 @@ async def create_courses(
 )
 async def retreive_courses(
 	id: Annotated[int, Path(..., title='id of course to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 ):
-	await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
-	return await course_handlers.get_one_course(id, db)
+	#await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
+	return await handler.get_one(id)
 
 
 #	update course
@@ -75,11 +72,10 @@ async def retreive_courses(
 async def update_courses(
 	id: Annotated[int, Path(..., title='id of course to be updated')],
 	course: course_schemas.CourseCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 ):
-	await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
-	return await course_handlers.update_course(id, course, db)
+	#await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
+	return await handler.update(id, course)
 
 
 #	delete course
@@ -89,9 +85,8 @@ async def update_courses(
 )
 async def delete_courses(
 	id: Annotated[int, Path(..., title='id of course to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 ):
-	await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
-	return await course_handlers.delete_course(id, db)
+	#await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
+	return await handler.delete(id)
 	
