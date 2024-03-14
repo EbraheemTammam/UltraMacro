@@ -23,7 +23,7 @@ from models import (
 	student as student_models,
 	division as division_models
 )
-import handlers.student as student_handlers
+from handlers.student import StudentHandler
 
 student_router = APIRouter()
 
@@ -34,11 +34,10 @@ student_router = APIRouter()
     status_code=status.HTTP_200_OK
 )
 async def get_students(
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)],
+	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-    return await student_handlers.get_all_students(regulation, user, db)
+    return await handler.get_all(regulation)
 
 #	get all graduate students
 @student_router.get(
@@ -47,11 +46,10 @@ async def get_students(
     status_code=status.HTTP_200_OK
 )
 async def get_graduate_students(
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)],
+	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 	regulation: int = Query(None, title='id of regulation to filter result')
 ):
-    return await student_handlers.get_all_students(regulation_id=regulation, db=db, user=user, graduate=True)
+    return await handler.get_all(regulation_id=regulation, graduate=True)
 
 
 #	create student
@@ -62,10 +60,9 @@ async def get_graduate_students(
 )
 async def create_students(
 	student: student_schemas.StudentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 ):
-	return await student_handlers.create_student(student, db)
+	return await handler.create(student)
 
 
 #	get one student
@@ -76,11 +73,10 @@ async def create_students(
 )
 async def retreive_students(
 	id: Annotated[UUID, Path(..., title='id of student to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 ):
-	await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
-	return await student_handlers.get_student_detail(id, db)
+	#await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
+	return await handler.get_student_detail(id)
 
 
 #	update student
@@ -91,11 +87,10 @@ async def retreive_students(
 async def update_students(
 	id: Annotated[UUID, Path(..., title='id of student to be updated')],
 	student: student_schemas.StudentCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 ):
-	await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
-	return await student_handlers.update_student(id, student, db)
+	#await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
+	return await handler.update(id, student)
 
 
 #	delete student
@@ -105,8 +100,7 @@ async def update_students(
 )
 async def delete_students(
 	id: Annotated[UUID, Path(..., title='id of student to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 ):
-	await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
-	return await student_handlers.delete_student(id, db)
+	#await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
+	return await handler.delete(id)
