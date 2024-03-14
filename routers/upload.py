@@ -21,8 +21,12 @@ upload_router = APIRouter()
 
 
 @upload_router.post('/upload_divisions')
-async def upload_divisions(file: Annotated[UploadFile, File(...)], db: Annotated[AsyncSession, Depends(get_async_db)]):
-    return await upload_handlers.division_upload(file, db)
+async def upload_divisions(
+    file: Annotated[UploadFile, File(...)],
+    regulation: Annotated[int, Query(title='id of regulation')],
+    db: Annotated[AsyncSession, Depends(get_async_db)]
+):
+    return await upload_handlers.division_upload(file, regulation, db)
 
 
 @upload_router.post('/upload_courses')
