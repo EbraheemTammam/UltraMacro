@@ -35,6 +35,7 @@ class Student(Base):
 	passed_hours = Column(Integer, nullable=False, default=0)
 	excluded_hours = Column(Integer, nullable=False, default=0)
 	research_hours = Column(Integer, nullable=False, default=0)
+	total_points = Column(Float, nullable=False, default=0)
 	gpa = Column(Float, nullable=False, default=0)
 	total_mark = Column(Float, nullable=False, default=0)
 	graduate = Column(Boolean, nullable=False, default=False)

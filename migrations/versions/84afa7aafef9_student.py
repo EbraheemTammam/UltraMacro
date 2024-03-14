@@ -28,6 +28,7 @@ def upgrade() -> None:
     sa.Column('passed_hours', sa.Integer(), nullable=False),
     sa.Column('excluded_hours', sa.Integer(), nullable=False),
     sa.Column('research_hours', sa.Integer(), nullable=False),
+    sa.Column('total_points', sa.Float(), nullable=False),
     sa.Column('gpa', sa.Float(), nullable=False),
     sa.Column('total_mark', sa.Float(), nullable=False),
     sa.Column('graduate', sa.Boolean(), nullable=False),

@@ -13,6 +13,7 @@ class StudentBase(BaseModel):
     passed_hours: int
     excluded_hours: int
     research_hours: int
+    total_points: float
     gpa: float
     total_mark: float
     graduate: bool
@@ -25,6 +26,7 @@ class StudentCreate(StudentBase):
     passed_hours: Optional[int] = 0
     excluded_hours: Optional[int] = 0
     research_hours: Optional[int] = 0
+    total_points: Optional[float] = 0
     gpa: Optional[float] = 0
     total_mark: Optional[float] = 0
     graduate: Optional[bool] = False
