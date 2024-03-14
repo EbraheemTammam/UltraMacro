@@ -15,7 +15,8 @@ import schemas.course as course_schemas
 from models import (
     course as course_models,
     user as user_models,
-    division as division_models
+    division as division_models,
+    enrollment as enrollment_models
 )
 
 
@@ -118,6 +119,28 @@ class CourseHandler:
         if course:
             return course
         raise self.NotFoundException
+    
+
+    async def check_required_and_not_passed(self, division_id: int, passed_enrollments: List[enrollment_models.Enrollment]):
+        passed_courses_query = await self.db.execute(
+			select(course_models.Course.id).
+			where(
+				course_models.Course.id.in_([e.course_id for e in passed_enrollments])
+			)
+		)
+        passed_courses = passed_courses_query.scalars().all()
+        required_courses = await self.db.execute(
+			select(course_models.Course).
+			where(
+				and_(
+					course_models.Course.required==True,
+					course_models.Course.divisions.any(id=division_id)
+				)
+			).
+			except_(course_models.Course.id.in_(passed_courses)).
+            exists()
+		)
+        return required_courses
 
 
     async def update(self, id: int, course: course_schemas.CourseCreate):
