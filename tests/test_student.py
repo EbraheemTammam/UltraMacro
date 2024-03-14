@@ -17,18 +17,19 @@ def test_create_student(authorized_client, test_create_division):
         }
     )
     assert res.status_code == 201
-    assert res.json()["name"] == "test student"
-    assert res.json()["group"]["id"] == group["id"]
-    assert res.json()["division"] == None
-    assert res.json()["registered_hours"] == 0
-    assert res.json()["passed_hours"] == 0
-    assert res.json()["excluded_hours"] == 0
-    assert res.json()["research_hours"] == 0
-    assert res.json()["gpa"] == 0
-    assert res.json()["total_mark"] == 0
-    assert res.json()["level"] == 1
-    assert res.json()["graduate"] == False
-    return res.json()
+    res = res.json()
+    assert res["name"] == "test student"
+    assert res["group"]["id"] == group["id"]
+    assert res["division"] == None
+    assert res["registered_hours"] == 0
+    assert res["passed_hours"] == 0
+    assert res["excluded_hours"] == 0
+    assert res["research_hours"] == 0
+    assert res["gpa"] == 0
+    assert res["total_mark"] == 0
+    assert res["level"] == 1
+    assert res["graduate"] == False
+    return res
 
 
 def test_get_all_students(authorized_client):
