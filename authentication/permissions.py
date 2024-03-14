@@ -1,176 +1,122 @@
 from uuid import UUID
 from typing import Any
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from sqlalchemy import and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from authentication.oauth2 import get_current_user
+from database import get_async_db
+from exceptions import UnAuthorizedException
 
-import models
+from models.user import User, UserDivisions
+from models.division import Division
+from models.student import Student
+from models.course import Course, CourseDivisions
 
 
 
-async def has_regulation_permission(
-	user: models.user.User, 
-	object_id: int, 
-	auth_exception: HTTPException, 
-	db = AsyncSession
-):
-	query = (
-		select(models.division.Division).
-		where(
-			and_(
-				models.division.Division.regulation_id==object_id,
-				models.division.Division.id.in_(
-					select(models.user.UserDivisions.columns.division_id).
-					where(models.user.UserDivisions.columns.user_id==user.id)
+class Permission:
+
+	def __init__(self, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)) -> None:
+		self.user = user
+		self.db = db
+		self.UnAuthorizedException = UnAuthorizedException()
+
+	async def has_object_permission(self, id):
+		pass
+
+
+
+class RegulationPermission(Permission):
+
+	async def has_object_permission(self, id):
+		if self.user.is_admin:
+			return True
+		query = await self.db.execute(
+			select(Division).
+			where(
+				and_(
+					Division.regulation_id==id,
+					Division.users.any(id=self.user.id)
 				)
-			)
+			).
+			exists()
 		)
-	)
-	result = await db.execute(query)
-	divisions = result.scalars().all()
-	if divisions:
-		return
-	raise auth_exception
+		return query
 
-async def has_department_permission(
-	user: models.user.User, 
-	object_id: int, 
-	auth_exception: HTTPException, 
-	db: AsyncSession
-):
-	query = (
-		select(models.division.Division).
-		where(
-			and_(
-				or_(
-					models.division.Division.department_1_id==object_id,
-					models.division.Division.department_2_id==object_id
-				),
-				models.division.Division.id.in_(
-					select(models.user.UserDivisions.columns.division_id).
-					where(models.user.UserDivisions.columns.user_id==user.id)
+
+class DepartmentPermission(Permission):
+
+	async def has_object_permission(self, id):
+		query = await self.db.execute(
+			select(Division).
+			where(
+				and_(
+					or_(
+						Division.department_1_id==id,
+						Division.department_2_id==id
+					),
+					Division.users.any(id=self.user.id)
 				)
-			)
+			).
+			exists()
 		)
-	)
-	result = await db.execute(query)
-	divisions = result.scalars().all()
-	if divisions:
-		return
-	raise auth_exception
+		return query
 
 
-async def has_division_permission(
-	user: models.user.User, 
-	object_id: int, 
-	auth_exception: HTTPException, 
-	db: AsyncSession
-):
-	query = (
-		select(models.division.Division).
-		where(
-			and_(
-				models.division.Division.id==object_id,
-				models.division.Division.id.in_(
-					select(models.user.UserDivisions.columns.division_id).
-					where(models.user.UserDivisions.columns.user_id==user.id)
+class DivisionPermission(Permission):
+
+	async def has_object_permission(self, id):
+		query = await self.db.execute(
+			select(Division).
+			where(
+				and_(
+					Division.id==id,
+					Division.users.any(id=self.user.id)
 				)
-			)
+			).
+			exists()
 		)
-	)
-	result = await db.execute(query)
-	divisions = result.scalars().all()
-	if divisions:
-		return
-	raise auth_exception
+		return query
 
 
-async def has_student_permission(
-	user: models.user.User, 
-	object_id: int, 
-	auth_exception: HTTPException, 
-	db: AsyncSession
-):
-	query = (
-		select(models.division.Division).
-		where(
-			and_(
-				or_(
-					models.division.Division.id==select(
-						models.student.Student.group_id
-					).where(models.student.Student.id==object_id),
-					models.division.Division.id==select(
-						models.student.Student.group_id
-					).where(models.student.Student.id==object_id)
-				),
-				models.division.Division.id.in_(
-					select(models.user.UserDivisions.columns.division_id).
-					where(models.user.UserDivisions.columns.user_id==user.id)
+class StudentPermission(Permission):
+
+	async def has_object_permission(self, id):
+		query = await self.db.execute(
+			select(Division).
+			where(
+				and_(
+					or_(
+						Division.id==(
+							select(Student.group_id).
+							where(Student.id==id)
+						),
+						Division.id==(
+							select(Student.group_id).
+							where(Student.id==id)
+						)
+					),
+					Division.users.any(id=self.user.id)
 				)
-			)
+			).
+			exists()
 		)
-	)
-	query = await db.execute(query)
-	if query.scalars().all():
-		return
-	raise auth_exception
+		return query
+	
 
+class CoursePermission(Permission):
 
-async def has_course_permission(
-	user: models.user.User, 
-	object_id: int, 
-	auth_exception: HTTPException, 
-	db: AsyncSession
-):
-	query = (
-		select(models.division.Division).
-		where(
-			and_(
-				models.division.Division.id.in_(
-					select(models.course.CourseDivisions.columns.division_id).
-					where(models.course.CourseDivisions.columns.course_id==object_id)
-				),
-				models.division.Division.id.in_(
-					select(models.user.UserDivisions.columns.division_id).
-					where(models.user.UserDivisions.columns.user_id==user.id)
+	async def has_object_permission(self, id):
+		query = await self.db.execute(
+			select(Division).
+			where(
+				and_(
+					Division.courses.any(id=id),
+					Division.users.any(id=self.user.id)
 				)
-			)
+			).
+			exists()
 		)
-	)
-	query = await db.execute(query)
-	if query.scalars().all():
-		return
-	raise auth_exception
-
-
-async def has_permission(
-	user: models.user.User, 
-	class_: Any, 
-	object_id: int | UUID, 
-	db: AsyncSession
-) -> None:
-	#	main exception
-	auth_exception = HTTPException(
-		detail="User has no permission",
-		status_code=status.HTTP_401_UNAUTHORIZED
-	)
-	#	admin always allowed
-	if user.is_admin:
-		return
-	#	check regulation
-	if class_ == models.regulation.Regulation:
-		await has_regulation_permission(user, object_id, auth_exception, db)
-	#	check department
-	elif class_ == models.department.Department:
-		await has_department_permission(user, object_id, auth_exception, db)
-	#	check division
-	if class_ == models.division.Division:
-		await has_division_permission(user, object_id, auth_exception, db)
-	#	check student
-	elif class_ == models.student.Student:
-		await has_student_permission(user, object_id, auth_exception, db)
-	#	check course
-	elif class_ == models.course.Course:
-		await has_course_permission(user, object_id, auth_exception, db)
+		return query
