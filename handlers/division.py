@@ -40,13 +40,21 @@ async def get_all_divisions(regulation_id: int | None, user: user_models.User, d
 
 
 async def create_division(division: division_schemas.DivisionCreate, db: AsyncSession):
-	await regulation_handlers.get_one_regulation(division.regulation_id, db)
-	await department_handlers.get_one_department(division.department_1_id, db)
-	if division.department_2_id:
-		await department_handlers.get_one_department(division.department_2_id, db)
+	division = division.dict().copy()
+	division['regulation_id'] = division['regulation']
+	division['department_1_id'] = division['department']
+	division['department_2_id'] = division['department2']
+	del division['regulation']
+	del division['department']
+	del division['department2']
+	await regulation_handlers.get_one_regulation(division['regulation_id'], db)
+	if division['department_1_id']:
+		await department_handlers.get_one_department(division['department_1_id'], db)
+	if division['department_2_id']:
+		await department_handlers.get_one_department(division['department_2_id'], db)
 	query = await db.execute(
 		insert(division_models.Division).
-		values(**division.dict()).
+		values(**division).
 		returning(division_models.Division).
 		options(
 			selectinload(division_models.Division.regulation),
@@ -85,14 +93,22 @@ async def get_division_by_name(name: str, db: AsyncSession):
 
 
 async def update_division(id: int, division: division_schemas.DivisionCreate, db: AsyncSession):
-	await regulation_handlers.get_one_regulation(division.regulation_id, db)
-	await department_handlers.get_one_department(division.department_1_id, db)
-	if division.department_2_id:
-		await department_handlers.get_one_department(division.department_2_id, db)
+	division = division.dict().copy()
+	division['regulation_id'] = division['regulation']
+	division['department_1_id'] = division['department']
+	division['department_2_id'] = division['department2']
+	del division['regulation']
+	del division['department']
+	del division['department2']
+	await regulation_handlers.get_one_regulation(division['regulation_id'], db)
+	if division['department_1_id']:
+		await department_handlers.get_one_department(division['department_1_id'], db)
+	if division['department_2_id']:
+		await department_handlers.get_one_department(division['department_2_id'], db)
 	query = (
 		update(division_models.Division).
         where(division_models.Division.id == id).
-        values({**division.dict()}).
+        values(**division).
         returning(division_models.Division).
 		options(
 			selectinload(division_models.Division.regulation),
