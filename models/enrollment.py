@@ -35,7 +35,7 @@ class Enrollment(Base):
 	year = Column(Integer, nullable=False)
 	month = Column(String(10), nullable=False)
 	points = Column(Float, nullable=False)
-	mark = Column(Integer, nullable=False)
+	mark = Column(Float, nullable=False)
 	full_mark = Column(Integer, nullable=False)
 	grade = Column(String(3), nullable=False)
 	student_id = Column(
