@@ -3,22 +3,12 @@ from fastapi import (
 	APIRouter,
 	Response,
 	status,
-	HTTPException,
 	Depends,
 	Path,
 	Query
 )
-from sqlalchemy import insert, update, delete
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
-from authentication.oauth2 import get_current_user
-from authentication.permissions import has_permission
-from database import get_db, get_async_db
 import schemas.regulation as regulation_schemas
-import models.regulation as regulation_models
-import models.user as user_models
 from handlers.regulation import RegulationHandler
 
 
@@ -56,11 +46,10 @@ async def create_regulations(
     response_model=regulation_schemas.Regulation,
     status_code=status.HTTP_200_OK
 )
-async def retreive_regulations(
+async def retrieve_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be retrieved')],
 	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-	#await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
 	return await handler.get_one(id)
 
 
@@ -74,7 +63,6 @@ async def update_regulations(
 	regulation: regulation_schemas.RegulationCreate,
 	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-	#await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
 	return await handler.update(id, regulation)
 
 
@@ -87,5 +75,4 @@ async def delete_regulations(
 	id: Annotated[int, Path(..., title='id of regulation to be updated')],
 	handler: Annotated[RegulationHandler, Depends(RegulationHandler)]
 ):
-	#await has_permission(user=user, class_=regulation_models.Regulation, object_id=id, db=db)
 	return await handler.delete(id)

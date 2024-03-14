@@ -4,23 +4,12 @@ from fastapi import (
 	APIRouter,
 	Response,
 	status,
-	HTTPException,
 	Depends,
 	Path,
 	Query
 )
-from sqlalchemy import insert, update, delete
-from sqlalchemy.orm import Session, selectinload
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
-from authentication.oauth2 import get_current_user
-from database import get_db, get_async_db
 import schemas.user as user_schemas
-from models import (
-    user as user_models,
-	division as division_models,
-)
 from handlers.user import UserHandler
 
 
@@ -58,7 +47,7 @@ async def create_users(
     response_model=user_schemas.User,
     status_code=status.HTTP_200_OK
 )
-async def retreive_users(
+async def retrieve_users(
 	id: Annotated[UUID, Path(..., title='id of user to be retrieved')],
 	handler: Annotated[UserHandler, Depends(UserHandler)]
 ):

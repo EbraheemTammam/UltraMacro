@@ -3,22 +3,12 @@ from fastapi import (
 	APIRouter,
 	Response,
 	status,
-	HTTPException,
 	Depends,
 	Path,
 	Query
 )
-from sqlalchemy import insert, update, delete
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-
-from authentication.oauth2 import get_current_user
-from authentication.permissions import has_permission
-from database import get_db, get_async_db
 import schemas.course as course_schemas
-import models.course as course_models
-import models.user as user_models
+
 from handlers.course import CourseHandler
 
 
@@ -56,11 +46,10 @@ async def create_courses(
     response_model=course_schemas.Course,
     status_code=status.HTTP_200_OK
 )
-async def retreive_courses(
+async def retrieve_courses(
 	id: Annotated[int, Path(..., title='id of course to be retrieved')],
 	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 ):
-	#await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
 	return await handler.get_one(id)
 
 
@@ -74,7 +63,6 @@ async def update_courses(
 	course: course_schemas.CourseCreate,
 	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 ):
-	#await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
 	return await handler.update(id, course)
 
 
@@ -87,6 +75,5 @@ async def delete_courses(
 	id: Annotated[int, Path(..., title='id of course to be updated')],
 	handler: Annotated[CourseHandler, Depends(CourseHandler)],
 ):
-	#await has_permission(user=user, class_=course_models.Course, object_id=id, db=db)
 	return await handler.delete(id)
 	

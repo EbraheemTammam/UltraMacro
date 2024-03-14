@@ -4,25 +4,12 @@ from fastapi import (
 	APIRouter,
 	Response,
 	status,
-	HTTPException,
 	Depends,
 	Path,
 	Query
 )
-from sqlalchemy import insert, update, delete
-from sqlalchemy.orm import Session, selectinload
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
-from authentication.oauth2 import get_current_user
-from authentication.permissions import has_permission
-from database import get_db, get_async_db
 import schemas.student as student_schemas
-from models import (
-	user as user_models,
-	student as student_models,
-	division as division_models
-)
 from handlers.student import StudentHandler
 
 student_router = APIRouter()
@@ -71,11 +58,10 @@ async def create_students(
     response_model=student_schemas.StudentDetail,
     status_code=status.HTTP_200_OK
 )
-async def retreive_students(
+async def retrieve_students(
 	id: Annotated[UUID, Path(..., title='id of student to be retrieved')],
 	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 ):
-	#await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
 	return await handler.get_student_detail(id)
 
 
@@ -89,7 +75,6 @@ async def update_students(
 	student: student_schemas.StudentCreate,
 	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 ):
-	#await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
 	return await handler.update(id, student)
 
 
@@ -102,5 +87,4 @@ async def delete_students(
 	id: Annotated[UUID, Path(..., title='id of student to be updated')],
 	handler: Annotated[StudentHandler, Depends(StudentHandler)],
 ):
-	#await has_permission(user=user, class_=student_models.Student, object_id=id, db=db)
 	return await handler.delete(id)

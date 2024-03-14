@@ -3,16 +3,12 @@ from fastapi import (
 	APIRouter,
 	Response,
 	status,
-	HTTPException,
 	Depends,
 	Path,
 	Query,
     File,
     UploadFile,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
-from authentication.oauth2 import get_current_user
-from database import get_db, get_async_db
 
 from handlers.upload import UploadHandler
 
