@@ -16,20 +16,21 @@ def test_create_division(authorized_client, test_create_regulation, test_create_
             "hours": 142,
             "private": False,
             "group": False,
-            "regulation_id": regulation["id"],
-            "department_1_id": department_1["id"],
-            "department_2_id": department_2["id"]
+            "regulation": regulation["id"],
+            "department": department_1["id"],
+            "department2": department_2["id"]
         }
     )
     assert res.status_code == 201
-    assert res.json()["name"] == "test division"
-    assert res.json()["hours"] == 142
-    assert res.json()["private"] == False
-    assert res.json()["group"] == False
-    assert res.json()["regulation"]["id"] == regulation["id"]
-    assert res.json()["department_1"]["id"] == department_1["id"]
-    assert res.json()["department_2"]["id"] == department_2["id"]
-    return res.json()
+    res = res.json()
+    assert res["name"] == "test division"
+    assert res["hours"] == 142
+    assert res["private"] == False
+    assert res["group"] == False
+    assert res["regulation"]["id"] == regulation["id"]
+    assert res["department_1"]["id"] == department_1["id"]
+    assert res["department_2"]["id"] == department_2["id"]
+    return res
 
 
 def test_get_all_divisions(authorized_client):
@@ -64,22 +65,23 @@ def test_update_division(authorized_client, test_create_division, test_create_re
         "hours": 142,
         "private": False,
         "group": False,
-        "regulation_id": regulation["id"],
-        "department_1_id": department_1["id"],
-        "department_2_id": department_2["id"]
+        "regulation": regulation["id"],
+        "department": department_1["id"],
+        "department2": department_2["id"]
     }
     res = authorized_client.put(
         f'/divisions/{division["id"]}',
         json=division
     )
     assert res.status_code == 200
-    assert res.json()['name'] == "updated division"
-    assert res.json()["hours"] == 142
-    assert res.json()["private"] == False
-    assert res.json()["group"] == False
-    assert res.json()["regulation"]["id"] == regulation["id"]
-    assert res.json()["department_1"]["id"] == department_1["id"]
-    assert res.json()["department_2"]["id"] == department_2["id"]
+    res = res.json()
+    assert res['name'] == "updated division"
+    assert res["hours"] == 142
+    assert res["private"] == False
+    assert res["group"] == False
+    assert res["regulation"]["id"] == regulation["id"]
+    assert res["department_1"]["id"] == department_1["id"]
+    assert res["department_2"]["id"] == department_2["id"]
 
 
 def test_update_non_exisitng_division(authorized_client, test_create_regulation, test_create_department):
@@ -91,9 +93,9 @@ def test_update_non_exisitng_division(authorized_client, test_create_regulation,
         "hours": 142,
         "private": False,
         "group": False,
-        "regulation_id": regulation["id"],
-        "department_1_id": department_1["id"],
-        "department_2_id": department_2["id"]
+        "regulation": regulation["id"],
+        "department": department_1["id"],
+        "department2": department_2["id"]
     }
     res = authorized_client.put(
         '/divisions/-1',
