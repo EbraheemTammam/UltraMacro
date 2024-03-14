@@ -1,10 +1,15 @@
 from typing import Any
 from uuid import UUID
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
+
+from authentication.oauth2 import get_current_user
+from database import get_async_db
+from exceptions import UserNotFoundException
+
 
 import schemas.user as user_schemas
 from models import (
@@ -17,125 +22,94 @@ from models import (
 )
 
 
-def main_query():
-	return (
-		select(user_models.User).
-		options(
-			selectinload(user_models.User.divisions).
-			options(
-				selectinload(division_models.Division.regulation),
-				selectinload(division_models.Division.department_1),
-				selectinload(division_models.Division.department_2),
-			)
-		)
-	)
 
+class UserHandler:
 
-async def check_email_uniqueness(email: str, db: AsyncSession):
-	user = await db.execute(
-		select(user_models.User).
-		where(user_models.User.email == email)
-	)
-	if user.scalar():
-		raise HTTPException(
-			detail="Email already exists",
+	def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
+		# self.user = user
+		self.db = db
+		self.model = user_models.User
+		self.NotFoundException = UserNotFoundException()
+		self.UniqueConstraintsException = HTTPException(
+			detail='user with this email already exists',
 			status_code=status.HTTP_403_FORBIDDEN
 		)
-	return
+		self.retrieve_query = (
+				select(user_models.User).
+				options(
+					selectinload(user_models.User.divisions).
+					options(
+						selectinload(division_models.Division.regulation),
+						selectinload(division_models.Division.department_1),
+						selectinload(division_models.Division.department_2),
+					)
+				)
+			)
 
 
-async def get_all_users(db: AsyncSession):
-	query = await db.execute(main_query())
-	return query.scalars().all()
+	async def check_email_uniqueness(self, email: str) -> bool:
+		user = await self.db.execute(
+			select(user_models.User.email).
+			where(user_models.User.email == email)
+		)
+		if user.scalar():
+			return False
+		return True
 
 
-async def create_user(user: user_schemas.UserCreate, db: AsyncSession):
-	await check_email_uniqueness(user.email, db)
-	new_user = user_models.User(**user.dict(exclude={'divisions'}))
-	db.add(new_user)
-	if user.divisions:
-		for d in user.divisions:
-			division = await db.get(division_models.Division, d)
-			new_user.divisions.append(division)
-	await db.commit()
-	await db.refresh(new_user)
-	return await get_one_user(new_user.id, db)
-	# query = await db.execute(
-	# 	insert(user_models.User).
-	# 	values(**user.dict(exclude={'divisions'})).
-	# 	returning(user_models.User).
-	# 	options(
-	# 		selectinload(user_models.User.divisions).
-	# 		options(
-	# 			selectinload(division_models.Division.regulation),
-	# 			selectinload(division_models.Division.department_1),
-	# 			selectinload(division_models.Division.department_2),
-	# 		)
-	# 	)
-	# )
-	# user = query.scalar_one()
-	# await db.commit()
-	# await db.refresh(user)
-	# return user
+	async def get_all(self):
+		query = await self.db.execute(self.retrieve_query)
+		return query.scalars().all()
 
 
-async def get_one_user(id: UUID, db: AsyncSession):
-	query = main_query().where(user_models.User.id == id)
-	query = await db.execute(query)
-	user = query.scalar()
-	if user:
-		return user
-	raise HTTPException(
-		detail=f"no user with given id: {id}",
-		status_code=status.HTTP_404_NOT_FOUND
-	)
+	async def create(self, user: user_schemas.UserCreate):
+		check = await self.check_email_uniqueness(user.email)
+		if not check:
+			raise self.UniqueConstraintsException
+		new_user = user_models.User(**user.dict(exclude={'divisions'}))
+		self.db.add(new_user)
+		if user.divisions:
+			for d in user.divisions:
+				division = await self.db.get(division_models.Division, d)
+				new_user.divisions.append(division)
+		await self.db.commit()
+		await self.db.refresh(new_user)
+		return await self.get_one(new_user.id)
 
 
-async def update_user(id: UUID, user: user_schemas.UserCreate, db: AsyncSession):
-	await check_email_uniqueness(user.email, db)
-	existing_user = get_one_user(id, db)
-	for key, value in user.dict(exclude={"divisions"}).items():
-		setattr(existing_user, key, value)
-	if user.divisions is not None:
-		existing_user.divisions.clear()
-		for division_id in user.divisions:
-			division = await db.get(division_models.Division, division_id)
-			if division:
-				existing_user.divisions.append(division)
-	await db.commit()
-	await db.refresh(existing_user)
-	return existing_user
-	# query = await db.execute(
-	# 	update(user_models.User).
-    #     where(user_models.User.id == id).
-    #     values({key: value for key, value in user.items() if key != "divisions"}).
-    #     returning(user_models.User).
-	# 	options(
-	# 		selectinload(user_models.User.divisions).
-	# 		options(
-	# 			selectinload(division_models.Division.regulation),
-	# 			selectinload(division_models.Division.department_1),
-	# 			selectinload(division_models.Division.department_2),
-	# 		)
-	# 	)
-	# )
-	# user = query.scalar()
-	# if not user:
-	# 	raise HTTPException(
-	# 	detail=f"no user with given id: {id}",
-	# 	status_code=status.HTTP_404_NOT_FOUND
-	# )
-	# await db.commit()
-	# await db.refresh(user)
-	# return user
+	async def get_one(self, id: UUID):
+		query = self.retrieve_query.where(user_models.User.id == id)
+		query = await self.db.execute(query)
+		user = query.scalar()
+		if user:
+			return user
+		raise self.NotFoundException
 
 
-async def delete_user(id: UUID, db: AsyncSession):
-	await get_one_user(id, db)
-	await db.execute(
-		delete(user_models.User).
-        where(user_models.User.id == id)
-	)
-	await db.commit()
-	return
+	async def update(self, id: UUID, user: user_schemas.UserCreate):
+		check = await self.check_email_uniqueness(user.email)
+		if not check:
+			raise self.UniqueConstraintsException
+		existing_user = await self.get_one(id)
+		for key, value in user.dict(exclude={"divisions"}).items():
+			setattr(existing_user, key, value)
+		if user.divisions is not None:
+			existing_user.divisions.clear()
+			for division_id in user.divisions:
+				division = await self.db.get(division_models.Division, division_id)
+				if division:
+					existing_user.divisions.append(division)
+		await self.db.commit()
+		await self.db.refresh(existing_user)
+		return existing_user
+
+
+	async def delete(self, id: UUID):
+		await self.get_one(id)
+		await self.db.execute(
+			delete(user_models.User).
+			where(user_models.User.id == id)
+		)
+		await self.db.commit()
+		return
 

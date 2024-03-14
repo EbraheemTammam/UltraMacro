@@ -21,7 +21,7 @@ from models import (
     user as user_models,
 	division as division_models,
 )
-import handlers.user as user_handlers
+from handlers.user import UserHandler
 
 
 user_router = APIRouter()
@@ -34,10 +34,9 @@ user_router = APIRouter()
     status_code=status.HTTP_200_OK
 )
 async def get_users(
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[UserHandler, Depends(UserHandler)]
 ):
-    return await user_handlers.get_all_users(db)
+    return await handler.get_all()
 
 
 #	create user
@@ -48,10 +47,9 @@ async def get_users(
 )
 async def create_users(
 	user: user_schemas.UserCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	current_user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[UserHandler, Depends(UserHandler)]
 ):
-	return await user_handlers.create_user(user, db)
+	return await handler.create(user)
 
 
 #	get one user
@@ -62,10 +60,9 @@ async def create_users(
 )
 async def retreive_users(
 	id: Annotated[UUID, Path(..., title='id of user to be retrieved')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[UserHandler, Depends(UserHandler)]
 ):
-	return await user_handlers.get_one_user(id, db)
+	return await handler.get_one(id)
 
 
 #	update user
@@ -76,10 +73,9 @@ async def retreive_users(
 async def update_users(
 	id: Annotated[UUID, Path(..., title='id of user to be updated')],
 	user: user_schemas.UserCreate,
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	current_user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[UserHandler, Depends(UserHandler)]
 ):
-	return await user_handlers.update_user(id, user, db)
+	return await handler.update(id, user)
 
 
 #	delete user
@@ -89,7 +85,6 @@ async def update_users(
 )
 async def delete_users(
 	id: Annotated[UUID, Path(..., title='id of user to be updated')],
-	db: Annotated[AsyncSession, Depends(get_async_db)],
-	user: Annotated[user_models.User, Depends(get_current_user)]
+	handler: Annotated[UserHandler, Depends(UserHandler)]
 ):
-	return await user_handlers.delete_user(id, db)
+	return await handler.delete(id)
