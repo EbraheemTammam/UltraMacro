@@ -13,7 +13,8 @@ from fastapi import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from authentication.oauth2 import get_current_user
 from database import get_db, get_async_db
-import handlers.upload as upload_handlers
+
+from handlers.upload import UploadHandler
 
 
 upload_router = APIRouter()
@@ -22,18 +23,17 @@ upload_router = APIRouter()
 
 @upload_router.post('/upload_divisions')
 async def upload_divisions(
-    file: Annotated[UploadFile, File(...)],
-    regulation: Annotated[int, Query(title='id of regulation')],
-    db: Annotated[AsyncSession, Depends(get_async_db)]
+    handler: Annotated[UploadHandler, Depends(UploadHandler)],
+    regulation: Annotated[int, Query(title='id of regulation')]
 ):
-    return await upload_handlers.division_upload(file, regulation, db)
+    return await handler.division_upload(regulation)
 
 
 @upload_router.post('/upload_courses')
-async def upload_divisions(file: Annotated[UploadFile, File(...)], db: Annotated[AsyncSession, Depends(get_async_db)]):
-    return await upload_handlers.course_upload(file, db)
+async def upload_courses(handler: Annotated[UploadHandler, Depends(UploadHandler)]):
+    return await handler.course_upload()
 
 
 @upload_router.post('/upload_enrollments')
-async def upload_divisions(file: Annotated[UploadFile, File(...)], db: Annotated[AsyncSession, Depends(get_async_db)]):
-    return await upload_handlers.enrollment_upload(file, db)
+async def upload_enrollments(handler: Annotated[UploadHandler, Depends(UploadHandler)]):
+    return await handler.enrollment_upload()
