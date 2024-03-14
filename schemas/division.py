@@ -11,9 +11,9 @@ class DivisionBase(BaseModel):
     group: bool
 
 class DivisionCreate(DivisionBase):
-    regulation_id: int
-    department_1_id: Optional[int] | None
-    department_2_id: Optional[int] | None
+    regulation: int
+    department: Optional[int] | None
+    department2: Optional[int] | None
 
 class Division(DivisionBase):
     id: int
