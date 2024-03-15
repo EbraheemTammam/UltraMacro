@@ -291,15 +291,14 @@ class StudentHandler:
 		elif student.passed_hours > 28:
 			student.level = 2
 		#	check graduation
-		if student.level < 4:
-			return
-		group = await self.db.get(Division, student.group_id)
-		division = await self.db.get(Division, student.division_id)
-		if group.private and (student.passed_hours < group.hours):
-			return
-		elif (not student.division) or (student.passed_hours < division.hours):
-			return
-		student.graduate = await self.check_graduation(student)
+		if student.level == 4:
+			group = await self.db.get(Division, student.group_id)
+			division = await self.db.get(Division, student.division_id)
+			if group.private and (student.passed_hours < group.hours):
+				return
+			elif (not student.division) or (student.passed_hours < division.hours):
+				return
+			student.graduate = await self.check_graduation(student)
 		student.gpa = await self.calculate_gpa(student)
 		self.db.add(student)
 		await self.db.commit()
@@ -307,14 +306,5 @@ class StudentHandler:
 	
 
 	async def calculate_gpa(self, student: Student):
-		passed_enrollments = await self.db.execute(
-			select(Enrollment).
-			where(
-				and_(
-					Enrollment.student_id==student.id,
-					Enrollment.points!=0
-				)
-			)
-		)
-		passed_enrollments = passed_enrollments.scalars()
-		return student.total_points / (student.registered_hours - student.excluded_hours - student.research_hours)
+		denominator = student.registered_hours - student.excluded_hours - student.research_hours
+		return student.total_points / denominator if denominator else 0
