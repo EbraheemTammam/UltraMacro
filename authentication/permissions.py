@@ -1,7 +1,6 @@
-from uuid import UUID
 from typing import Any
-from fastapi import HTTPException, status, Depends
-from sqlalchemy import and_, or_
+from fastapi import Depends
+from sqlalchemy import and_, or_, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -39,23 +38,22 @@ class RegulationPermission(Permission):
 
 	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
-			select(Division).
+			select(exists(Division)).
 			where(
 				and_(
 					Division.regulation_id==id,
 					Division.users.any(id=self.user.id)
 				)
-			).
-			exists()
+			)
 		)
-		return query
+		return query.scalar()
 
 
 class DepartmentPermission(Permission):
 
 	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
-			select(Division).
+			select(exists(Division)).
 			where(
 				and_(
 					or_(
@@ -64,33 +62,31 @@ class DepartmentPermission(Permission):
 					),
 					Division.users.any(id=self.user.id)
 				)
-			).
-			exists()
+			)
 		)
-		return query
+		return query.scalar()
 
 
 class DivisionPermission(Permission):
 
 	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
-			select(Division).
+			select(exists(Division)).
 			where(
 				and_(
 					Division.id==id,
 					Division.users.any(id=self.user.id)
 				)
-			).
-			exists()
+			)
 		)
-		return query
+		return query.scalar()
 
 
 class StudentPermission(Permission):
 
 	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
-			select(Division).
+			select(exists(Division)).
 			where(
 				and_(
 					or_(
@@ -105,26 +101,24 @@ class StudentPermission(Permission):
 					),
 					Division.users.any(id=self.user.id)
 				)
-			).
-			exists()
+			)
 		)
-		return query
+		return query.scalar()
 	
 
 class CoursePermission(Permission):
 
 	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
-			select(Division).
+			select(exists(Division)).
 			where(
 				and_(
 					Division.courses.any(id=id),
 					Division.users.any(id=self.user.id)
 				)
-			).
-			exists()
+			)
 		)
-		return query
+		return query.scalar()
 	
 
 
@@ -132,4 +126,4 @@ class EnrollmentPermission(Permission):
 
 	async def has_object_permission(self, id: Any) -> bool:
 		enrollment = await self.db.get(Enrollment, id)
-		return CoursePermission().has_object_permission(enrollment.course_id)
+		return await CoursePermission().has_object_permission(enrollment.course_id)
