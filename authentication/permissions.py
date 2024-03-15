@@ -13,6 +13,7 @@ from models.user import User, UserDivisions
 from models.division import Division
 from models.student import Student
 from models.course import Course, CourseDivisions
+from models.enrollment import Enrollment
 
 
 
@@ -35,7 +36,7 @@ class Permission:
 
 class RegulationPermission(Permission):
 
-	async def has_object_permission(self, id):
+	async def has_object_permission(self, id: Any) -> bool:
 		if self.user.is_admin:
 			return True
 		query = await self.db.execute(
@@ -53,7 +54,7 @@ class RegulationPermission(Permission):
 
 class DepartmentPermission(Permission):
 
-	async def has_object_permission(self, id):
+	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
 			select(Division).
 			where(
@@ -72,7 +73,7 @@ class DepartmentPermission(Permission):
 
 class DivisionPermission(Permission):
 
-	async def has_object_permission(self, id):
+	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
 			select(Division).
 			where(
@@ -88,7 +89,7 @@ class DivisionPermission(Permission):
 
 class StudentPermission(Permission):
 
-	async def has_object_permission(self, id):
+	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
 			select(Division).
 			where(
@@ -113,7 +114,7 @@ class StudentPermission(Permission):
 
 class CoursePermission(Permission):
 
-	async def has_object_permission(self, id):
+	async def has_object_permission(self, id: Any) -> bool:
 		query = await self.db.execute(
 			select(Division).
 			where(
@@ -130,5 +131,6 @@ class CoursePermission(Permission):
 
 class EnrollmentPermission(Permission):
 
-	async def has_object_permission(self, id):
-		pass
+	async def has_object_permission(self, id: Any) -> bool:
+		enrollment = await self.db.get(Enrollment, id)
+		return CoursePermission().has_object_permission(enrollment.course_id)
