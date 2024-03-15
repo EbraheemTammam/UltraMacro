@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
 from database import get_async_db
-from exceptions import UnAuthorizedException
+from exceptions import ForbiddenException
 
 from models.user import User, UserDivisions
 from models.division import Division
@@ -21,10 +21,15 @@ class Permission:
 	def __init__(self, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)) -> None:
 		self.user = user
 		self.db = db
-		self.UnAuthorizedException = UnAuthorizedException()
+		self.ForbiddenException = ForbiddenException()
 
-	async def has_object_permission(self, id):
+	async def has_object_permission(self, id: Any) -> bool:
 		pass
+
+
+	async def check_permission(self, id: Any):
+		if not await self.has_object_permission(id):
+			raise self.ForbiddenException
 
 
 
@@ -120,3 +125,10 @@ class CoursePermission(Permission):
 			exists()
 		)
 		return query
+	
+
+
+class EnrollmentPermission(Permission):
+
+	async def has_object_permission(self, id):
+		pass
