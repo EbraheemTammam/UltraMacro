@@ -88,6 +88,7 @@ class DivisionHandler:
 		query = await self.db.execute(query)
 		division = query.scalar()
 		if division:
+			await self.permission_class.check_permission(id)
 			return division
 		raise self.NotFoundException
 
@@ -97,6 +98,7 @@ class DivisionHandler:
 		query = await self.db.execute(query)
 		division = query.scalar()
 		if division:
+			await self.permission_class.check_permission(division.id)
 			return division
 		raise self.NotFoundException
 
@@ -123,6 +125,7 @@ class DivisionHandler:
 		division = query.scalar()
 		if not division:
 			raise self.NotFoundException
+		await self.permission_class.check_permission(id)
 		await self.db.commit()
 		await self.db.refresh(division)
 		return division

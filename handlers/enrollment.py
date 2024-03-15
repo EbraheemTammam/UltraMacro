@@ -15,6 +15,7 @@ import schemas.enrollment as enrollment_schemas
 from models.enrollment import Enrollment
 from models.course import Course
 from models.student import Student
+from models.division import Division
 
 from handlers.course import CourseHandler
 
@@ -40,6 +41,24 @@ class EnrollmentHandler:
 				selectinload(self.model.course)
 			)
 		)
+		if not self.user.is_admin:
+			self.retrieve_query = self.retrieve_query.where(
+				self.model.student_id.in_(
+					select(Student.id).
+					where(
+						or_(
+							Student.group_id.in_(
+								select(Division.id).
+								where(Division.users.any_(id=self.user.id))
+							),
+							Student.division_id.in_(
+								select(Division.id).
+								where(Division.users.any_(id=self.user.id))
+							)
+						)
+					)
+				)
+			)
 
 	
 	async def get_all(
@@ -126,6 +145,7 @@ class EnrollmentHandler:
 	async def get_one(self, id: UUID):
 		enrollment = await self.db.get(self.model, id)
 		if enrollment:
+			await self.permission_class.check_permission(id)
 			return enrollment
 		raise self.NotFoundException
 
@@ -184,13 +204,14 @@ class EnrollmentHandler:
 		existing_enrollment = self.get_one(id)
 		for key, val in enrollment.dict().items():
 			setattr(existing_enrollment, key, val)
+		await self.permission_class.check_permission(id)
 		await self.db.commit()
 		await self.db.refresh(existing_enrollment)
 		return existing_enrollment
 
 
 	async def delete(self, id: UUID):
-		enrollment = await self.get_one9id
+		enrollment = await self.get_one(id)
 		await self.db.delete(enrollment)
 		await self.db.commit()
 		return

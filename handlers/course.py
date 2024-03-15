@@ -85,6 +85,7 @@ class CourseHandler:
         course = await self.db.execute(query)
         course = course.scalar()
         if course:
+            await self.permission_class.check_permission(id)
             return course
         raise self.NotFoundException
 
@@ -96,6 +97,7 @@ class CourseHandler:
         course = await self.db.execute(query)
         course = course.scalars().first()
         if course:
+            await self.permission_class.check_permission(course.id)
             return course
         raise self.NotFoundException
 
@@ -113,6 +115,7 @@ class CourseHandler:
         course = await self.db.execute(query)
         course = course.scalar()
         if course:
+            await self.permission_class.check_permission(course.id)
             return course
         raise self.NotFoundException
     
@@ -141,6 +144,7 @@ class CourseHandler:
 
     async def update(self, id: int, course: course_schemas.CourseCreate):
         existing_course = await self.get_one(id)
+        await self.permission_class.check_permission(id)
         for key, value in course.dict(exclude={"divisions"}).items():
                 setattr(existing_course, key, value)
         if course.divisions is not None:

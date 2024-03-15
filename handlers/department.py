@@ -57,6 +57,7 @@ class DepartmentHandler:
     async def get_one(self, id: int):
         department = await self.db.get(self.model, id)
         if department:
+            await self.permission_class.check_permission(id)
             return department
         raise self.NotFoundException
 
@@ -68,6 +69,7 @@ class DepartmentHandler:
         )
         department = query.scalar()
         if department:
+            await self.permission_class.check_permission(department.id)
             return department
         raise self.NotFoundException
 
@@ -82,6 +84,7 @@ class DepartmentHandler:
         department = department.scalar()
         if not department:
             raise self.NotFoundException
+        await self.permission_class.check_permission(id)
         await self.db.commit()
         await self.db.refresh(department)
         return department
