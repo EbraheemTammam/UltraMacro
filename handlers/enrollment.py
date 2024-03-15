@@ -49,11 +49,11 @@ class EnrollmentHandler:
 						or_(
 							Student.group_id.in_(
 								select(Division.id).
-								where(Division.users.any_(id=self.user.id))
+								where(Division.users.any(id=self.user.id))
 							),
 							Student.division_id.in_(
 								select(Division.id).
-								where(Division.users.any_(id=self.user.id))
+								where(Division.users.any(id=self.user.id))
 							)
 						)
 					)
