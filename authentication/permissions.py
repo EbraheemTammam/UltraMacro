@@ -29,6 +29,7 @@ class Permission:
 
 
 	async def check_permission(self, id: Any):
+		if self.user.is_admin: return
 		if not await self.has_object_permission(id):
 			raise self.ForbiddenException
 
@@ -37,8 +38,6 @@ class Permission:
 class RegulationPermission(Permission):
 
 	async def has_object_permission(self, id: Any) -> bool:
-		if self.user.is_admin:
-			return True
 		query = await self.db.execute(
 			select(Division).
 			where(
