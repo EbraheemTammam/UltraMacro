@@ -1,26 +1,23 @@
 from typing import Optional
 from uuid import UUID
-from fastapi import HTTPException, status, Depends
+from fastapi import Depends
 from sqlalchemy import or_, and_, func, String, cast
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete, String
 from sqlalchemy.orm import selectinload
 
 
-from authentication.oauth2 import get_current_user
-from database import get_async_db
 from exceptions import StudentNotFoundException
+from authentication.permissions import StudentPermission
 
 
 import schemas.student as student_schemas
-from models import (
-	student as student_models,
-	division as division_models,
-	user as user_models,
-	enrollment as enrollment_models,
-	course as course_models
-)
+
+from models.student import Student
+from models.division import Division
+from models.course import Course
+from models.enrollment import Enrollment
+
 from handlers.division import DivisionHandler
 from handlers.enrollment import EnrollmentHandler
 from handlers.course import CourseHandler
@@ -32,16 +29,16 @@ class StudentHandler:
 
 	def __init__(
 		self, 
-		user: user_models.User = Depends(get_current_user), 
-		db: AsyncSession = Depends(get_async_db),
+		permission_class: StudentPermission = Depends(StudentPermission),
 		division_handler: DivisionHandler = Depends(DivisionHandler),
 		enrollment_handler: EnrollmentHandler = Depends(EnrollmentHandler),
 		course_handler: CourseHandler = Depends(CourseHandler)
 	) -> None:
-		self.user = user
-		self.db = db
+		self.user = permission_class.user
+		self.db = permission_class.db
+		self.permission_class = permission_class
 		self.NotFoundException = StudentNotFoundException()
-		self.model = student_models.Student
+		self.model = Student
 		self.division_handler = division_handler
 		self.enrollment_handler = enrollment_handler
 		self.course_handler = course_handler
@@ -50,28 +47,28 @@ class StudentHandler:
 			options(
 				selectinload(self.model.group).
 				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
+					selectinload(Division.regulation),
+					selectinload(Division.department_1),
+					selectinload(Division.department_2),
 				),
 				selectinload(self.model.division).
 				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
+					selectinload(Division.regulation),
+					selectinload(Division.department_1),
+					selectinload(Division.department_2),
 				)
 			)
 		)
-		if not user.is_admin:
+		if not self.user.is_admin:
 			self.retrieve_query = self.retrieve_query.where(
 				or_(
 					self.model.division_id.in_(
-						select(division_models.Division.id).
-						where(division_models.Division.users.any(id=user.id))
+						select(Division.id).
+						where(Division.users.any(id=self.user.id))
 					),
 					self.model.group_id.in_(
-						select(division_models.Division.id).
-						where(division_models.Division.users.any(id=user.id))
+						select(Division.id).
+						where(Division.users.any(id=self.user.id))
 					)
 				)
 			)
@@ -83,12 +80,12 @@ class StudentHandler:
 			query = query.where(
 				or_(
 					self.model.group_id.in_(
-						select(division_models.Division.id).
-						where(division_models.Division.regulation_id==regulation_id)
+						select(Division.id).
+						where(Division.regulation_id==regulation_id)
 					),
 					self.model.division_id.in_(
-						select(division_models.Division.id).
-						where(division_models.Division.regulation_id==regulation_id)
+						select(Division.id).
+						where(Division.regulation_id==regulation_id)
 					)
 				)
 			)
@@ -110,15 +107,15 @@ class StudentHandler:
 			options(
 				selectinload(self.model.group).
 				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
+					selectinload(Division.regulation),
+					selectinload(Division.department_1),
+					selectinload(Division.department_2),
 				),
 				selectinload(self.model.division).
 				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
+					selectinload(Division.regulation),
+					selectinload(Division.department_1),
+					selectinload(Division.department_2),
 				)
 			)
 		)
@@ -146,7 +143,7 @@ class StudentHandler:
 		raise self.NotFoundException
 
 
-	async def get_by_name_and_division(self, name: str, division: division_models.Division):
+	async def get_by_name_and_division(self, name: str, division: Division):
 		try:
 			student = await self.get_by_name(name)
 			if not (division.group or division.private):
@@ -173,15 +170,15 @@ class StudentHandler:
 			options(
 				selectinload(self.model.group).
 				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
+					selectinload(Division.regulation),
+					selectinload(Division.department_1),
+					selectinload(Division.department_2),
 				),
 				selectinload(self.model.division).
 				options(
-					selectinload(division_models.Division.regulation),
-					selectinload(division_models.Division.department_1),
-					selectinload(division_models.Division.department_2),
+					selectinload(Division.regulation),
+					selectinload(Division.department_1),
+					selectinload(Division.department_2),
 				)
 			)
 		)
@@ -212,18 +209,18 @@ class StudentHandler:
 	):
 		enrollments = await self.enrollment_handler.get_all(student_id, level, semester, None)
 		total_points_query = (
-			select(func.sum(enrollment_models.Enrollment.points * course_models.Course.credit_hours)).
-			join(course_models.Course).
+			select(func.sum(Enrollment.points * Course.credit_hours)).
+			join(Course).
 			where(
 				and_(
-					enrollment_models.Enrollment.grade.in_(['A', 'B', 'C', 'D']),
-					enrollment_models.Enrollment.student_id==cast(str(student_id), String),
-					enrollment_models.Enrollment.course_id.in_(
-						select(course_models.Course.id).
+					Enrollment.grade.in_(['A', 'B', 'C', 'D']),
+					Enrollment.student_id==cast(str(student_id), String),
+					Enrollment.course_id.in_(
+						select(Course.id).
 						where(
 							and_(
-								course_models.Course.level==level,
-								course_models.Course.semester==semester
+								Course.level==level,
+								Course.semester==semester
 							)
 						)
 					)
@@ -265,9 +262,9 @@ class StudentHandler:
 		}
 	
 
-	async def check_graduation(self, student: student_models.Student):
-		group = await self.db.get(division_models.Division, student.group_id)
-		division = await self.db.get(division_models.Division, student.division_id)
+	async def check_graduation(self, student: Student):
+		group = await self.db.get(Division, student.group_id)
+		division = await self.db.get(Division, student.division_id)
 		if group.group and not division:
 			return False
 		passed_enrollments = self.enrollment_handler.get_all(student.id, None, None, None, True, False)
@@ -281,7 +278,7 @@ class StudentHandler:
 		return True
 	
 
-	async def post_add_enrollment(self, student: student_models.Student):
+	async def post_add_enrollment(self, student: Student):
 		#	check level
 		if student.passed_hours > 98:
 			student.level = 4
@@ -292,8 +289,8 @@ class StudentHandler:
 		#	check graduation
 		if student.level < 4:
 			return
-		group = await self.db.get(division_models.Division, student.group_id)
-		division = await self.db.get(division_models.Division, student.division_id)
+		group = await self.db.get(Division, student.group_id)
+		division = await self.db.get(Division, student.division_id)
 		if group.private and (student.passed_hours < group.hours):
 			return
 		elif (not student.division) or (student.passed_hours < division.hours):

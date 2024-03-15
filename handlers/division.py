@@ -1,21 +1,13 @@
-from fastapi import HTTPException, status, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
 
-
-from authentication.oauth2 import get_current_user
-from database import get_async_db
 from exceptions import DivisionNotFoundException
+from authentication.permissions import DivisionPermission
 
 import schemas.division as division_schemas
-from models import (
-	regulation as regulation_models,
-	department as department_models,
-	division as division_models,
-	user as user_models
-)
+from models.division import Division
 from handlers.regulation import RegulationHandler
 from handlers.department import DepartmentHandler
 
@@ -25,14 +17,14 @@ class DivisionHandler:
 
 	def __init__(
 		self,
-		user: user_models.User = Depends(get_current_user), 
-		db: AsyncSession = Depends(get_async_db),
+		permission_class: DivisionPermission = Depends(DivisionPermission),
 		regulation_handler: RegulationHandler = Depends(RegulationHandler),
 		department_handler: DepartmentHandler = Depends(DepartmentHandler)
 	) -> None:
-		self.user = user
-		self.db = db
-		self.model = division_models.Division
+		self.user = permission_class.user
+		self.db = permission_class.db
+		self.permission_class = permission_class
+		self.model = Division
 		self.regulation_handler = regulation_handler
 		self.department_handler = department_handler
 		self.NotFoundException = DivisionNotFoundException()
@@ -44,8 +36,8 @@ class DivisionHandler:
 				selectinload(self.model.department_2),
 			)
 		)
-		if not user.is_admin:
-			self.retrieve_query = self.retrieve_query.where(self.model.users.any(id=user.id))
+		if not self.user.is_admin:
+			self.retrieve_query = self.retrieve_query.where(self.model.users.any(id=self.user.id))
 
 
 	async def get_all(self, regulation_id: int | None):

@@ -14,11 +14,7 @@ from exceptions import UserNotFoundException
 import schemas.user as user_schemas
 from models import (
     user as user_models,
-	regulation as regulation_models,
-	department as department_models,
     division as division_models,
-	course as course_models,
-	student as student_models
 )
 
 

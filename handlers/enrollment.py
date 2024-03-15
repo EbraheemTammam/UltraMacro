@@ -1,25 +1,21 @@
 from typing import Optional
 from uuid import UUID
-from fastapi import HTTPException, status, Depends
+from fastapi import Depends
 from sqlalchemy import String, cast, func, and_, or_
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
 
 
-from authentication.oauth2 import get_current_user
-from database import get_async_db
-from exceptions import EnrollmentNotFoundException
+from exceptions import EnrollmentNotFoundException, StudentNotFoundException, CourseNotFoundException
+from authentication.permissions import EnrollmentPermission
 
 
 import schemas.enrollment as enrollment_schemas
-from models import (
-	course as course_models,
-	enrollment as enrollment_models,
-	student as student_models,
-	user as user_models
-)
+from models.enrollment import Enrollment
+from models.course import Course
+from models.student import Student
+
 from handlers.course import CourseHandler
 
 
@@ -29,14 +25,14 @@ class EnrollmentHandler:
 
 	def __init__(
 		self, 
-		user: user_models.User = Depends(get_current_user), 
-		db: AsyncSession = Depends(get_async_db),
+		permission_class: EnrollmentPermission = Depends(EnrollmentPermission),
 		course_handler: CourseHandler = Depends(CourseHandler)
 	) -> None:
-		self.user = user
-		self.db = db
+		self.user = permission_class.user
+		self.db = permission_class.db
+		self.permission_class = permission_class
 		self.course_handler = course_handler
-		self.model = enrollment_models.Enrollment
+		self.model = Enrollment
 		self.NotFoundException = EnrollmentNotFoundException()
 		self.retrieve_query = (
 			select(self.model).
@@ -73,15 +69,15 @@ class EnrollmentHandler:
 		if level:
 			query = query.where(
 				self.model.course_id.in_(
-					select(course_models.Course.id).
-					where(course_models.Course.level==level)
+					select(Course.id).
+					where(Course.level==level)
 				)
 			)
 		if semester:
 			query = query.where(
 				self.model.course_id.in_(
-					select(course_models.Course.id).
-					where(course_models.Course.semester==semester)
+					select(Course.id).
+					where(Course.semester==semester)
 				)
 			)
 		if course_id:
@@ -92,18 +88,12 @@ class EnrollmentHandler:
 
 
 	async def create(self, enrollment: enrollment_schemas.EnrollmentCreate):
-		student = await self.db.get(student_models.Student, enrollment.student_id)
+		student = await self.db.get(Student, enrollment.student_id)
 		if not student:
-			raise HTTPException(
-				detail='Student not found',
-				status_code=status.HTTP_400_BAD_REQUEST
-			)
-		course = await self.db.get(course_models.Course, enrollment.course_id)
+			raise StudentNotFoundException()
+		course = await self.db.get(Course, enrollment.course_id)
 		if not course:
-			raise HTTPException(
-				detail='Course not found',
-				status_code=status.HTTP_400_BAD_REQUEST
-			)
+			raise CourseNotFoundException()
 		new_enrollment = self.model(**enrollment.dict())
 		self.db.add(new_enrollment)
 		await self.db.commit()
@@ -111,7 +101,7 @@ class EnrollmentHandler:
 		return new_enrollment
 	
 
-	async def post_create(self, enrollment: enrollment_models.Enrollment, student: student_models.Student, course: course_models.Course):
+	async def post_create(self, enrollment: Enrollment, student: Student, course: Course):
 		if course.credit_hours == 0: return
 		#   check if research
 		if enrollment.grade == 'بح' and enrollment.mark == 0:
@@ -144,8 +134,8 @@ class EnrollmentHandler:
 		self,
 		headers: dict, 
 		enrollment: dict, 
-		student: student_models.Student, 
-		course: course_models.Course,
+		student: Student, 
+		course: Course,
 	):
 		#	check if enrollment exists
 		query = (

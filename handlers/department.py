@@ -1,42 +1,38 @@
-from fastapi import HTTPException, status, Depends
+from fastapi import Depends
 from sqlalchemy import or_
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
 
 
-from authentication.oauth2 import get_current_user
-from database import get_async_db
 from exceptions import DepartmentNotFoundException
+from authentication.permissions import DepartmentPermission
 
 
 import schemas.department as department_schemas
-from models import (
-    department as department_models,
-    user as user_models,
-    division as division_models
-)
+from models.department import Department
+from models.division import Division
 
 
 class DepartmentHandler:
 
-    def __init__(self, user: user_models.User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)) -> None:
-        self.user = user
-        self.db = db
-        self.model = department_models.Department
+    def __init__(self, permission_class: DepartmentPermission = Depends(DepartmentPermission)) -> None:
+        self.user = permission_class.user
+        self.db = permission_class.db
+        self.permission_class = permission_class
+        self.model = Department
         self.NotFoundException = DepartmentNotFoundException()
         self.retrieve_query = select(self.model)
-        if not user.is_admin:
+        if not self.user.is_admin:
             self.retrieve_query = self.retrieve_query.where(
                 or_(
                     self.model.id.in_(
-                        select(division_models.Division.department_1_id).
-                        where(division_models.Division.users.any(id=user.id))
+                        select(Division.department_1_id).
+                        where(Division.users.any(id=self.user.id))
                     ),
                     self.model.id.in_(
-                        select(division_models.Division.department_2_id).
-                        where(division_models.Division.users.any(id=user.id))
+                        select(Division.department_2_id).
+                        where(Division.users.any(id=self.user.id))
                     )
                 )
             )

@@ -1,35 +1,31 @@
-from fastapi import HTTPException, status, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
 
-from authentication.oauth2 import get_current_user
-from database import get_async_db
+from authentication.permissions import RegulationPermission
 from exceptions import RegulationNotFoundException
 
 import schemas.regulation as regulation_schemas
-from models import (
-    regulation as regulation_models,
-    user as user_models,
-    division as division_models
-)
+from models.regulation import Regulation
+from models.division import Division
 
 
 class RegulationHandler:
 
 
-    def __init__(self, user: user_models.User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)) -> None:
-        self.user = user
-        self.db = db
-        self.model = regulation_models.Regulation
+    def __init__(self, permission_class: RegulationPermission = Depends(RegulationPermission)) -> None:
+        self.permission_class = permission_class
+        self.user = permission_class.user
+        self.db = permission_class.db
+        self.model = Regulation
         self.NotFoundException = RegulationNotFoundException()
         self.retrieve_query = select(self.model)
-        if not user.is_admin:
+        if not self.user.is_admin:
             self.retrieve_query = self.retrieve_query.where(
                 self.model.id.in_(
-                    select(division_models.Division.regulation_id).
-                    where(division_models.Division.users.any(id=user.id))
+                    select(Division.regulation_id).
+                    where(Division.users.any(id=self.user.id))
                 )
             )
 

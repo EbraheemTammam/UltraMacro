@@ -1,52 +1,48 @@
 from typing import List
-from fastapi import HTTPException, status, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete, and_
 from sqlalchemy.orm import selectinload
 
 
-from authentication.oauth2 import get_current_user
-from database import get_async_db
 from exceptions import CourseNotFoundException
+from authentication.permissions import CoursePermission
 
 
 import schemas.course as course_schemas
-from models import (
-    course as course_models,
-    user as user_models,
-    division as division_models,
-    enrollment as enrollment_models
-)
+from models.course import Course, CourseDivisions
+from models.division import Division
+from models.enrollment import Enrollment
 
 
 
 class CourseHandler:
 
-    def __init__(self, user: user_models.User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)) -> None:
-        self.user = user
-        self.db = db
+    def __init__(self, permission_class: CoursePermission = Depends(CoursePermission)) -> None:
+        self.user = permission_class.user
+        self.db = permission_class.db
+        self.permission_class = permission_class
         self.NotFoundException = CourseNotFoundException()
-        self.model = course_models.Course
+        self.model = Course
         self.retrieve_query = (
             select(self.model).
             options(
                 selectinload(self.model.divisions).
                 options(
-                    selectinload(division_models.Division.regulation),
-                    selectinload(division_models.Division.department_1),
-                    selectinload(division_models.Division.department_2),
+                    selectinload(Division.regulation),
+                    selectinload(Division.department_1),
+                    selectinload(Division.department_2),
                 )
             )
         )
-        if not user.is_admin:
+        if not self.user.is_admin:
             self.retrieve_query = self.retrieve_query.where(
                 self.model.id.in_(
                     select(self.model.Divisions.columns.course_id).
                     where(
                         self.model.Divisions.columns.division_id.in_(
-                            select(division_models.Division.id).
-                            where(division_models.Division.users.any(id=user.id))
+                            select(Division.id).
+                            where(Division.users.any(id=self.user.id))
                         )
                     )
                 )
@@ -59,11 +55,11 @@ class CourseHandler:
             if not regulation_id else
             self.retrieve_query.where(
                 self.model.id.in_(
-                    select(division_models.CourseDivisions.columns.course_id).
+                    select(CourseDivisions.columns.course_id).
                     where(
-                        division_models.CourseDivisions.columns.division_id.in_(
-                            select(division_models.Division.id).
-                            where(division_models.Division.regulation_id==regulation_id)
+                        CourseDivisions.columns.division_id.in_(
+                            select(Division.id).
+                            where(Division.regulation_id==regulation_id)
                         )
                     )
                 )
@@ -77,7 +73,7 @@ class CourseHandler:
         self.db.add(new_course)
         if course.divisions:
             for d in course.divisions:
-                division = await self.db.get(division_models.Division, d)
+                division = await self.db.get(Division, d)
                 new_course.divisions.append(division)
         await self.db.commit()
         await self.db.refresh(new_course)
@@ -104,7 +100,7 @@ class CourseHandler:
         raise self.NotFoundException
 
 
-    async def get_by_code_and_divisions(self, code: str, divisions: List[division_models.Division]):
+    async def get_by_code_and_divisions(self, code: str, divisions: List[Division]):
         query = (
             select(self.model).
             where(
@@ -121,23 +117,23 @@ class CourseHandler:
         raise self.NotFoundException
     
 
-    async def check_required_and_not_passed(self, division_id: int, passed_enrollments: List[enrollment_models.Enrollment]):
+    async def check_required_and_not_passed(self, division_id: int, passed_enrollments: List[Enrollment]):
         passed_courses_query = await self.db.execute(
-			select(course_models.Course.id).
+			select(Course.id).
 			where(
-				course_models.Course.id.in_([e.course_id for e in passed_enrollments])
+				Course.id.in_([e.course_id for e in passed_enrollments])
 			)
 		)
         passed_courses = passed_courses_query.scalars().all()
         required_courses = await self.db.execute(
-			select(course_models.Course).
+			select(Course).
 			where(
 				and_(
-					course_models.Course.required==True,
-					course_models.Course.divisions.any(id=division_id)
+					Course.required==True,
+					Course.divisions.any(id=division_id)
 				)
 			).
-			except_(course_models.Course.id.in_(passed_courses)).
+			except_(Course.id.in_(passed_courses)).
             exists()
 		)
         return required_courses
@@ -150,7 +146,7 @@ class CourseHandler:
         if course.divisions is not None:
             existing_course.divisions.clear()
             for division_id in course.divisions:
-                division = await self.db.get(division_models.Division, division_id)
+                division = await self.db.get(Division, division_id)
                 if division:
                     existing_course.divisions.append(division)
         await self.db.commit()
