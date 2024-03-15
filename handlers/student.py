@@ -126,11 +126,11 @@ class StudentHandler:
 
 
 	async def get_one(self, id: UUID):
+		await self.permission_class.check_permission(id)
 		query = self.retrieve_query.where(self.model.id==id)
 		query = await self.db.execute(query)
 		student = query.scalar()
 		if student:
-			await self.permission_class.check_permission(id)
 			return student
 		raise self.NotFoundException
 
@@ -139,8 +139,8 @@ class StudentHandler:
 		query = self.retrieve_query.where(self.model.name==name)
 		query = await self.db.execute(query)
 		student = query.scalar()
+		await self.permission_class.check_permission(student.id)
 		if student:
-			await self.permission_class.check_permission(student.id)
 			return student
 		raise self.NotFoundException
 
@@ -155,13 +155,13 @@ class StudentHandler:
 				return None
 			student = self.model(name=name, group_id=division.id)
 			self.db.add(student)
-		await self.permission_class.check_permission(student.id)
 		await self.db.commit()
 		await self.db.refresh(student)
 		return student
 
 
 	async def update(self, id: UUID, student: student_schemas.StudentCreate):
+		await self.permission_class.check_permission(id)
 		await self.division_handler.get_one(student.group_id)
 		if student.division_id:
 			await self.division_handler.get_one(student.division_id)
@@ -189,7 +189,6 @@ class StudentHandler:
 		student = query.scalar()
 		if not student:
 			raise self.NotFoundException
-		await self.permission_class.check_permission(id)
 		await self.db.commit()
 		await self.db.refresh(student)
 		return student
@@ -239,7 +238,6 @@ class StudentHandler:
 
 	async def get_student_detail(self, id: UUID):
 		student = await self.get_one(id)
-		await self.permission_class.check_permission(id)
 		details = [await self.get_semester_detail(id, l, s) for l in range(1, 5) for s in range(1, 4)]
 		return {
 			'regulation': student.division.regulation.name if student.division else student.group.regulation.name,

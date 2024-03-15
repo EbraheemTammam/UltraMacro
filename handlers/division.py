@@ -84,11 +84,11 @@ class DivisionHandler:
 
 
 	async def get_one(self, id: int):
+		await self.permission_class.check_permission(id)
 		query = self.retrieve_query.where(self.model.id == id)
 		query = await self.db.execute(query)
 		division = query.scalar()
 		if division:
-			await self.permission_class.check_permission(id)
 			return division
 		raise self.NotFoundException
 
@@ -97,13 +97,14 @@ class DivisionHandler:
 		query = self.retrieve_query.where(self.model.name == name)
 		query = await self.db.execute(query)
 		division = query.scalar()
+		await self.permission_class.check_permission(division.id)
 		if division:
-			await self.permission_class.check_permission(division.id)
 			return division
 		raise self.NotFoundException
 
 
 	async def update(self, id: int, division: division_schemas.DivisionCreate):
+		await self.permission_class.check_permission(id)
 		division = await self.re_organize_input_dict(division)
 		await self.regulation_handler.get_one(division['regulation_id'])
 		if division['department_1_id']:
@@ -125,7 +126,6 @@ class DivisionHandler:
 		division = query.scalar()
 		if not division:
 			raise self.NotFoundException
-		await self.permission_class.check_permission(id)
 		await self.db.commit()
 		await self.db.refresh(division)
 		return division

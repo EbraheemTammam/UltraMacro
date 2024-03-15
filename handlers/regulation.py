@@ -47,14 +47,15 @@ class RegulationHandler:
 
 
     async def get_one(self, id: int):
+        await self.permission_class.check_permission(id)
         regulation = await self.db.get(self.model, id)
         if regulation:
-            await self.permission_class.check_permission(id)
             return regulation
         raise self.NotFoundException
 
 
     async def update(self, id: int, regulation: regulation_schemas.RegulationCreate):
+        await self.permission_class.check_permission(id)
         query = (
             update(self.model).
             where(self.model.id == id).
@@ -65,7 +66,6 @@ class RegulationHandler:
         regulation = result.scalar()
         if not regulation:
             raise self.NotFoundException
-        await self.permission_class.check_permission(id)
         await self.db.commit()
         await self.db.refresh(regulation)
         return regulation

@@ -143,9 +143,9 @@ class EnrollmentHandler:
 
 
 	async def get_one(self, id: UUID):
+		await self.permission_class.check_permission(id)
 		enrollment = await self.db.get(self.model, id)
 		if enrollment:
-			await self.permission_class.check_permission(id)
 			return enrollment
 		raise self.NotFoundException
 
