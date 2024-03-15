@@ -4,6 +4,13 @@ from fastapi import HTTPException, status
 
 
 
+class ForbiddenException(HTTPException):
+
+    def __init__(self) -> None:
+        super().__init__(status.HTTP_403_FORBIDDEN, "User have no access rights")
+
+
+
 class UnAuthorizedException(HTTPException):
 
     def __init__(self) -> None:
