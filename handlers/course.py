@@ -38,9 +38,9 @@ class CourseHandler:
         if not self.user.is_admin:
             self.retrieve_query = self.retrieve_query.where(
                 self.model.id.in_(
-                    select(self.model.Divisions.columns.course_id).
+                    select(CourseDivisions.columns.course_id).
                     where(
-                        self.model.Divisions.columns.division_id.in_(
+                        CourseDivisions.columns.division_id.in_(
                             select(Division.id).
                             where(Division.users.any(id=self.user.id))
                         )
