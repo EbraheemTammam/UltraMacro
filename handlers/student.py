@@ -299,7 +299,22 @@ class StudentHandler:
 			return
 		elif (not student.division) or (student.passed_hours < division.hours):
 			return
-		student.graduate = self.check_graduation(student)
+		student.graduate = await self.check_graduation(student)
+		student.gpa = await self.calculate_gpa(student)
 		self.db.add(student)
 		await self.db.commit()
 		return
+	
+
+	async def calculate_gpa(self, student: Student):
+		passed_enrollments = await self.db.execute(
+			select(Enrollment).
+			where(
+				and_(
+					Enrollment.student_id==student.id,
+					Enrollment.points!=0
+				)
+			)
+		)
+		passed_enrollments = passed_enrollments.scalars()
+		return student.total_points / (student.registered_hours - student.excluded_hours - student.research_hours)

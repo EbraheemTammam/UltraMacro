@@ -92,11 +92,13 @@ class UploadHandler:
 		data = await xl_handlers.final_dict(content)
 		division = await self.division_handler.get_by_name(data['headers']['division'])
 		response = []
+		students = set()
 		for d in data['content']:
 			student = await self.student_handler.get_by_name_and_division(d['student'], division)
 			if not student:
 				response.append({'student': d['student'], 'course': d['course'], 'status': 'first year data does not exist'})
 				continue
+			students.add(student)
 			try:
 				course = await self.course_handler.get_by_code_and_divisions(d['code'], [student.group, student.division])
 			except:
@@ -111,7 +113,8 @@ class UploadHandler:
 				continue
 			self.db.add(enrollment)
 			await self.enrollment_handler.post_create(enrollment, student, course)
-			await self.student_handler.post_add_enrollment(student)
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
+		for student in students:
+			await self.student_handler.post_add_enrollment(student)
 		await self.db.commit()
 		return response
