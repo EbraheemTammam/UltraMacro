@@ -33,7 +33,7 @@ def create_access_token(payload: dict):
 	)
 	return token
 
-def verify_access_token(token: str, credentials_exceoption):
+def verify_access_token(token: str, credentials_exception):
 	try:
 		payload = jwt.decode(
 			token,
@@ -42,18 +42,18 @@ def verify_access_token(token: str, credentials_exceoption):
 		)
 		id: str = payload.get('user_id')
 		if not id:
-			raise credentials_exceoption
+			raise credentials_exception
 	except JWTError:
-		raise credentials_exceoption
+		raise credentials_exception
 	return schemas.authentication.TokenPayload(**payload)
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(get_async_db)]):
-	credentials_exceoption = HTTPException(
+	credentials_exception = HTTPException(
 		status_code=status.HTTP_401_UNAUTHORIZED,
 		detail='could not validate credentials',
 		headers={'WWW-Authenticate': 'Bearer'}
 	)
-	token = verify_access_token(token, credentials_exceoption)
+	token = verify_access_token(token, credentials_exception)
 	user = await db.execute(
 		select(user_models.User).
 		where(user_models.User.id==token.user_id).
