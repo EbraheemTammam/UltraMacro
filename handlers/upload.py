@@ -98,7 +98,6 @@ class UploadHandler:
 			if not student:
 				response.append({'student': d['student'], 'course': d['course'], 'status': 'first year data does not exist'})
 				continue
-			students.add(student)
 			try:
 				course = await self.course_handler.get_by_code_and_divisions(d['code'], [student.group, student.division])
 			except:
@@ -112,7 +111,8 @@ class UploadHandler:
 				response.append({'student': student.name, 'course': course.name, 'status': 'enrollment already exists'})
 				continue
 			self.db.add(enrollment)
-			await self.enrollment_handler.post_create(enrollment, student, course)
+			student = await self.enrollment_handler.post_create(enrollment, student, course)
+			students.add(student)
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
 		for student in students:
 			await self.student_handler.post_add_enrollment(student)
