@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 
 from authentication.oauth2 import get_current_user
 from database import get_async_db
-from exceptions import ForbiddenException
+from exceptions import ForbiddenException, UnAuthorizedException
 
 from models.user import User, UserDivisions
 from models.division import Division
@@ -14,6 +14,15 @@ from models.student import Student
 from models.course import Course, CourseDivisions
 from models.enrollment import Enrollment
 
+
+
+class AdminPermission:
+
+	def __init__(self, user: User = Depends(get_current_user)) -> None:
+		if not user.is_admin:
+			raise UnAuthorizedException()
+		self.user = user
+		
 
 
 class Permission:
@@ -28,8 +37,7 @@ class Permission:
 
 
 	async def check_permission(self, id: Any):
-		if self.user.is_admin: return
-		if not await self.has_object_permission(id):
+		if not (self.user.is_admin or await self.has_object_permission(id)):
 			raise self.ForbiddenException
 
 
