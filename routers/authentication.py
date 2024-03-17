@@ -9,12 +9,10 @@ from fastapi import (
 	Query
 )
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from authentication.oauth2 import create_access_token, verify_access_token
-from authentication.utils import verify_password
 from database import get_db, get_async_db
 import schemas.authentication as auth_schemas
 import models.user as user_models
@@ -56,10 +54,10 @@ async def login(
 	'/login/verify'
 )
 async def verify(accessToken: auth_schemas.Verify):
-	credentials_exceoption = HTTPException(
+	credentials_exception = HTTPException(
 		status_code=status.HTTP_401_UNAUTHORIZED,
 		detail='could not validate credentials',
 		headers={'WWW-Authenticate': 'Bearer'}
 	)
-	token = verify_access_token(accessToken.accessToken, credentials_exceoption)
+	token = verify_access_token(accessToken.accessToken, credentials_exception)
 	return {"key": accessToken.accessToken, "user": token}
