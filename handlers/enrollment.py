@@ -121,7 +121,7 @@ class EnrollmentHandler:
 	
 
 	async def post_create(self, enrollment: Enrollment, student: Student, course: Course):
-		if course.credit_hours == 0: return
+		if course.credit_hours == 0: return student
 		#   check if research
 		if enrollment.grade == 'بح' and enrollment.mark == 0:
 			student.research_hours += course.credit_hours
@@ -137,9 +137,7 @@ class EnrollmentHandler:
 			student.passed_hours += course.credit_hours
 			student.total_points += enrollment.points * course.credit_hours
 			student.total_mark += (enrollments[0].mark + enrollments[-1].mark) / 2 if enrollments else enrollment.mark
-
-		self.db.add(student)
-		await self.db.commit()
+		return student
 
 
 	async def get_one(self, id: UUID):
