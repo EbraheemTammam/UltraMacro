@@ -1,14 +1,14 @@
 from typing import Any
 from uuid import UUID
-from fastapi import HTTPException, status, Depends
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
 
-from authentication.oauth2 import get_current_user
+from authentication.permissions import AdminPermission
 from database import get_async_db
-from exceptions import UserNotFoundException
+from exceptions import UserNotFoundException, ForbiddenException
 
 
 import schemas.user as user_schemas
@@ -21,15 +21,12 @@ from models import (
 
 class UserHandler:
 
-	def __init__(self, db: AsyncSession = Depends(get_async_db)) -> None:
-		# self.user = user
+	def __init__(self, permission_class: AdminPermission = Depends(AdminPermission), db: AsyncSession = Depends(get_async_db)) -> None:
+		self.user = permission_class.user
 		self.db = db
 		self.model = user_models.User
 		self.NotFoundException = UserNotFoundException()
-		self.UniqueConstraintsException = HTTPException(
-			detail='user with this email already exists',
-			status_code=status.HTTP_403_FORBIDDEN
-		)
+		self.UniqueConstraintsException = ForbiddenException("user with this email already exists")
 		self.retrieve_query = (
 				select(user_models.User).
 				options(
