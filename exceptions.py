@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from typing_extensions import Annotated, Doc
 from fastapi import HTTPException, status
 
@@ -13,8 +13,8 @@ class ForbiddenException(HTTPException):
 
 class UnAuthorizedException(HTTPException):
 
-    def __init__(self) -> None:
-        super().__init__(status.HTTP_401_UNAUTHORIZED, "Un Authorized")
+    def __init__(self, detail: Optional[str] = "UNAUTHORIZED") -> None:
+        super().__init__(status.HTTP_401_UNAUTHORIZED, detail, headers={'WWW-Authenticate': 'Bearer'})
 
 
 
