@@ -7,6 +7,7 @@ from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
 
 from authentication.permissions import AdminPermission
+from authentication.oauth2 import TokenHandler
 from database import get_async_db
 from exceptions import UserNotFoundException, ForbiddenException
 
@@ -21,9 +22,14 @@ from models import (
 
 class UserHandler:
 
-	def __init__(self, permission_class: AdminPermission = Depends(AdminPermission), db: AsyncSession = Depends(get_async_db)) -> None:
+	def __init__(
+		self, 
+		permission_class: AdminPermission = Depends(AdminPermission), 
+		token_handler: TokenHandler = Depends(TokenHandler)
+	) -> None:
 		self.user = permission_class.user
-		self.db = db
+		self.db = token_handler.db
+		self.token_handler = token_handler
 		self.model = user_models.User
 		self.NotFoundException = UserNotFoundException()
 		self.UniqueConstraintsException = ForbiddenException("user with this email already exists")
@@ -67,6 +73,7 @@ class UserHandler:
 				new_user.divisions.append(division)
 		await self.db.commit()
 		await self.db.refresh(new_user)
+		await self.token_handler.create(new_user)
 		return await self.get_one(new_user.id)
 
 
