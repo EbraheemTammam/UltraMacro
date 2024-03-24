@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import HTTPException, status, UploadFile, File, Depends
+from fastapi import UploadFile, File, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete, and_
@@ -8,16 +8,12 @@ from sqlalchemy.orm import selectinload
 
 from authentication.oauth2 import get_current_user
 from database import get_async_db
+from authentication.permissions import AdminPermission
 
 
-from schemas import (
-	division as division_schemas,
-)
 from models import (
     division as division_models,
 	course as course_models,
-	student as student_models,
-	enrollment as enrollment_models,
 	user as user_models
 )
 from handlers import xl as xl_handlers
@@ -35,7 +31,7 @@ class UploadHandler:
 	def __init__(
 		self,
 		file: UploadFile = File(...),
-		user: user_models.User = Depends(get_current_user), 
+		permission_class: AdminPermission = Depends(AdminPermission), 
 		db: AsyncSession = Depends(get_async_db),
 		department_handler: DepartmentHandler = Depends(DepartmentHandler),
 		division_handler: DivisionHandler = Depends(DivisionHandler),
@@ -44,7 +40,7 @@ class UploadHandler:
 		enrollment_handler: EnrollmentHandler = Depends(EnrollmentHandler)
 	) -> None:
 		self.file = file
-		self.user = user
+		self.user = permission_class.user
 		self.db = db
 		self.department_handler = department_handler
 		self.division_handler = division_handler
