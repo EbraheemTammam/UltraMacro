@@ -12,10 +12,10 @@ from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from authentication.oauth2 import create_access_token, verify_access_token
+from authentication.oauth2 import TokenHandler, get_current_user
 from database import get_db, get_async_db
 import schemas.authentication as auth_schemas
-import models.user as user_models
+from models.user import User
 
 
 authentication_router = APIRouter()
@@ -28,36 +28,21 @@ authentication_router = APIRouter()
 async def login(
     #credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
 	credentials: auth_schemas.Login,
-    db: Annotated[AsyncSession, Depends(get_async_db)]
+    token_handler: Annotated[TokenHandler, Depends(TokenHandler)]
 ):
-	query = await db.execute(
-		select(user_models.User).
-		where(user_models.User.email == credentials.email)
-	)
-	user = query.scalar()
-	e = HTTPException(
-		detail="Invalid credentials",
-		status_code=status.HTTP_403_FORBIDDEN
-	)
-	if not user or credentials.password != user.password:
-		raise e
-	token = create_access_token(
-		payload={
-			"user_id": str(user.id),
-			"is_admin": user.is_admin
-		}
-	)
-	return {"token_type": "bearer", "accessToken": token}
+	return await token_handler.validate(credentials)
 
 
 @authentication_router.post(
 	'/login/verify'
 )
-async def verify(accessToken: auth_schemas.Verify):
-	credentials_exception = HTTPException(
-		status_code=status.HTTP_401_UNAUTHORIZED,
-		detail='could not validate credentials',
-		headers={'WWW-Authenticate': 'Bearer'}
-	)
-	token = verify_access_token(accessToken.accessToken, credentials_exception)
+async def verify(accessToken: auth_schemas.Verify, token_handler: Annotated[TokenHandler, Depends(TokenHandler)]):
+	token = await token_handler.verify(accessToken.accessToken)
 	return {"key": accessToken.accessToken, "user": token}
+
+
+
+@authentication_router.post('/logout')
+async def logout(user: Annotated[User, Depends(get_current_user)], token_handler: Annotated[TokenHandler, Depends(TokenHandler)]):
+	await token_handler.invalidate(user)
+	return {'detail': 'logged out successfully'}
