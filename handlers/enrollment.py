@@ -198,8 +198,8 @@ class EnrollmentHandler:
 		return new_enrollment
 
 
-	async def update(self, id: UUID, enrollment: enrollment_schemas.EnrollmentCreate):
-		existing_enrollment = self.get_one(id)
+	async def update(self, id: UUID, enrollment: enrollment_schemas.EnrollmentPartialUpdate):
+		existing_enrollment = await self.get_one(id)
 		for key, val in enrollment.dict().items():
 			setattr(existing_enrollment, key, val)
 		await self.permission_class.check_permission(id)
