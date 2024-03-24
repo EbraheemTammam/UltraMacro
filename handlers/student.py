@@ -218,7 +218,7 @@ class StudentHandler:
 			where(
 				and_(
 					Enrollment.grade.in_(['A', 'B', 'C', 'D']),
-					Enrollment.student_id==cast(str(student_id), String),
+					Enrollment.student_id==student_id,
 					Enrollment.course_id.in_(
 						select(Course.id).
 						where(
