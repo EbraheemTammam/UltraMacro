@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 from pydantic import BaseModel
 
 from schemas.course import CourseBase
@@ -20,6 +20,12 @@ class EnrollmentBase(BaseModel):
 class EnrollmentCreate(EnrollmentBase):
     student_id: UUID
     course_id: int
+
+
+class EnrollmentPartialUpdate(BaseModel):
+    mark: Optional[float]
+    grade: Optional[str]
+    points: Optional[float]
 
 
 class Enrollment(EnrollmentBase):
