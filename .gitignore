@@ -4,3 +4,4 @@ Pipfile*
 *.sqlite3
 check_upload
 .vscode
+diagrams
