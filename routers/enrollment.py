@@ -29,7 +29,6 @@ async def partial_update_enrollments(id: UUID, enrollment: EnrollmentPartialUpda
 
 @enrollment_router.delete(
     '/{id}',
-    response_model=Enrollment,
     status_code=status.HTTP_204_NO_CONTENT
 )
 async def update_enrollments(id: UUID, handler: Annotated[EnrollmentHandler, Depends(EnrollmentHandler)]):
