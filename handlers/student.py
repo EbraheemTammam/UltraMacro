@@ -271,11 +271,11 @@ class StudentHandler:
 		division = await self.db.get(Division, student.division_id)
 		if group.group and not division:
 			return False
-		passed_enrollments = self.enrollment_handler.get_all(student.id, None, None, None, True, False)
-		if self.course_handler.check_required_and_not_passed(group.id, passed_enrollments):
+		passed_enrollments = await self.enrollment_handler.get_all(student.id, None, None, None, True, False)
+		if await self.course_handler.check_required_and_not_passed(group.id, passed_enrollments):
 			return False
 		elif division:
-			if self.course_handler.check_required_and_not_passed(division.id, passed_enrollments):
+			if await self.course_handler.check_required_and_not_passed(division.id, passed_enrollments):
 				return False
 		if student.gpa < 1:
 			return False
