@@ -161,7 +161,7 @@ class EnrollmentHandler:
 			where(
 				and_(
 					self.model.seat_id==enrollment.get('seat_id'),
-					self.model.level==headers.get('level'),
+					self.model.level==headers.get('level') if headers.get('level') else -1,
 					self.model.semester==headers.get('semester'),
 					self.model.year==headers.get('year'),
 					self.model.month==headers.get('month'),
@@ -179,18 +179,14 @@ class EnrollmentHandler:
 		new_enrollment = self.model(
 			**{
 				'seat_id': enrollment['seat_id'],
-				'level': headers['level'],
+				'level': headers['level'] if headers.get('level') else -1,
 				'semester': headers['semester'],
 				'year': headers['year'],
 				'month': headers['month'],
 				'mark': float(enrollment['mark']),
 				'full_mark': enrollment['full_mark'],
 				'grade': enrollment['grade'],
-				'points': (
-					(float(enrollment['mark']) / (course.credit_hours * 10)) - 5 
-					if enrollment['grade'] in ['A', 'B', 'C', 'D'] and course.credit_hours != 0
-					else 0
-				),
+				'points': float(enrollment['points']),
 				'student_id': student.id,
 				'course_id': course.id,
 			}
