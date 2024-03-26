@@ -97,8 +97,8 @@ class DivisionHandler:
 		query = self.retrieve_query.where(self.model.name == name)
 		query = await self.db.execute(query)
 		division = query.scalar()
-		await self.permission_class.check_permission(division.id)
 		if division:
+			await self.permission_class.check_permission(division.id)
 			return division
 		raise self.NotFoundException
 
