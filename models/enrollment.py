@@ -30,8 +30,8 @@ class Enrollment(Base):
 	    default=uuid.uuid4
 	)
 	seat_id = Column(Integer, nullable=False)
-	level = Column(Integer, nullable=False)
-	semester = Column(Integer, nullable=False)
+	level = Column(Integer)
+	semester = Column(Integer)
 	year = Column(Integer, nullable=False)
 	month = Column(String(10), nullable=False)
 	points = Column(Float, nullable=False)
