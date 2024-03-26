@@ -89,35 +89,28 @@ class CourseHandler:
             return course
         raise self.NotFoundException
 
-    async def get_by_code(self, code: str):
-        query = (
-            select(self.model).
-            where(self.model.code == code)
-        )
-        course = await self.db.execute(query)
-        course = course.scalars().first()
-        await self.permission_class.check_permission(course.id)
-        if course:
-            return course
-        raise self.NotFoundException
 
-
-    async def get_by_code_and_divisions(self, code: str, divisions: List[Division]):
-        query = (
+    async def get_by_code_and_division_or_none(self, code: str, division_id: int):
+        #   try to get by code and division
+        query = await self.db.execute(
             select(self.model).
             where(
                 and_(
                     self.model.code == code,
-                    self.model.divisions.any(d.id for d in divisions)
+                    self.model.divisions.any(id=division_id)
                 )
             )
         )
-        course = await self.db.execute(query)
-        course = course.scalar()
-        await self.permission_class.check_permission(course.id)
+        course = query.scalar()
+        #   if not exists try to get by code only
+        if not course:
+            query = await self.db.execute(select(self.model).where(self.model.code == code))
+            course = query.scalars().first()    
+        #   return if exists
         if course:
+            #   check if user has the access rights
+            await self.permission_class.check_permission(course.id)
             return course
-        raise self.NotFoundException
     
 
     async def check_required_and_not_passed(self, division_id: int, passed_enrollments: List[Enrollment]):
