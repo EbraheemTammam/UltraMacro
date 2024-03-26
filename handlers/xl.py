@@ -44,8 +44,8 @@ async def get_header_data(df: pd.DataFrame) -> pd.DataFrame:
     cell = await advanced_cleanup(df.iloc[1])
     cell = cell.iloc[0].split('-')
     regulation = cell[0].strip()
-    level = LEVELS[cell[1].split()[1]]
-    semester = SEMESTERS[cell[2].split()[2]]
+    level = LEVELS.get(cell[1].split()[1])
+    semester = SEMESTERS.get([cell[2].split()[2]]) if len(cell[2].split()) > 2 else None  
     month = cell[3][1:]
     division = await advanced_cleanup(df.iloc[2])
     division = division.iloc[0].split(' : ')[1]
@@ -105,7 +105,7 @@ async def reform(df : pd.DataFrame) -> list:
                     'code': df.iloc[r + 1, c][1: -1].upper().replace(' ', ''),
                     'hours': df.iloc[r + 2, c].split()[2], 
                     'grade': df.iloc[r + 3, c], 
-                    'gpa': df.iloc[r + 3, c + 1], 
+                    'points': df.iloc[r + 3, c + 1], 
                     'mark': df.iloc[r + 3, c + 2],
                     'full_mark': df.iloc[r + 2, c].split()[0]
                 }
