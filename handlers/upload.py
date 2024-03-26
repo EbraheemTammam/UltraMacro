@@ -88,29 +88,34 @@ class UploadHandler:
 		data = await xl_handlers.final_dict(content)
 		division = await self.division_handler.get_by_name(data['headers']['division'])
 		response = []
-		students = set()
+		courses = dict()
+		student = None
 		for d in data['content']:
-			student = await self.student_handler.get_by_name_and_division(d['student'], division)
-			if not student:
-				response.append({'student': d['student'], 'course': d['course'], 'status': 'first year data does not exist'})
-				continue
-			try:
-				course = await self.course_handler.get_by_code_and_divisions(d['code'], [student.group, student.division])
-			except:
-				try:
-					course = await self.course_handler.get_by_code(d['code'])
-				except:
+			#	if new student
+			if not student or student.name != d['student']:
+				#	if exists execute post_add_enrollment
+				if student:
+					await self.student_handler.post_add_enrollment(student)
+				#	get the new student
+				student = await self.student_handler.get_by_name_and_division(d['student'], division)
+				if not student:
+					response.append({'student': d['student'], 'course': d['course'], 'status': 'first year data does not exist'})
+					continue
+			#	get the course
+			course = courses.get(d['code'])
+			if not course:
+				course = await self.course_handler.get_by_code_and_division_or_none(d['code'], division.id)
+				if not course:
 					response.append({'student': student.name, 'course': d['course'], 'status': 'course is not in the database'})
 					continue
+				courses[course.code] = course
+			#	create enrollment if not exists
 			enrollment = await self.enrollment_handler.get_or_create(data['headers'], d, student, course)
 			if not enrollment:
 				response.append({'student': student.name, 'course': course.name, 'status': 'enrollment already exists'})
 				continue
 			self.db.add(enrollment)
 			student = await self.enrollment_handler.post_create(enrollment, student, course)
-			students.add(student)
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
-		for student in students:
-			await self.student_handler.post_add_enrollment(student)
 		await self.db.commit()
 		return response
