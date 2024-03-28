@@ -45,7 +45,7 @@ async def get_header_data(df: pd.DataFrame) -> pd.DataFrame:
     cell = cell.iloc[0].split('-')
     regulation = cell[0].strip()
     level = LEVELS.get(cell[1].split()[1])
-    semester = SEMESTERS.get([cell[2].split()[2]]) if len(cell[2].split()) > 2 else None  
+    semester = SEMESTERS.get(cell[2].split()[2]) if len(cell[2].split()) > 2 else None  
     month = cell[3][1:]
     division = await advanced_cleanup(df.iloc[2])
     division = division.iloc[0].split(' : ')[1]
