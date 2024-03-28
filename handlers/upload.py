@@ -110,7 +110,7 @@ class UploadHandler:
 					continue
 				courses[course.code] = course
 			#	create enrollment if not exists
-			enrollment = await self.enrollment_handler.get_or_create(data['headers'], d, student, course)
+			enrollment = await self.enrollment_handler.get_or_create(data['headers'], d, student.id, course.id)
 			if not enrollment:
 				response.append({'student': student.name, 'course': course.name, 'status': 'enrollment already exists'})
 				continue
