@@ -139,24 +139,30 @@ class StudentHandler:
 		query = self.retrieve_query.where(self.model.name==name)
 		query = await self.db.execute(query)
 		student = query.scalar()
-		await self.permission_class.check_permission(student.id)
-		if student:
-			return student
-		raise self.NotFoundException
+		return student
 
 
 	async def get_by_name_and_division(self, name: str, division: Division):
-		try:
-			student = await self.get_by_name(name)
-			if not (division.group or division.private):
-				student.division = division
-		except:
-			if not (division.group or division.private):
-				return None
-			student = self.model(name=name, group_id=division.id)
-			self.db.add(student)
-		await self.db.commit()
-		await self.db.refresh(student)
+		student = await self.get_by_name(name)
+		if student:
+			if division.group or division.private:
+				return student
+			student.division = division
+		else:
+			if division.group or division.private:
+				student = self.model(
+					name=name, 
+					group_id=division.id, 
+					excluded_hours=0, 
+					passed_hours=0, 
+					registered_hours=0, 
+					research_hours=0,
+					total_points=0,
+					total_mark=0
+				)
+				self.db.add(student)
+				await self.db.commit()
+				await self.db.refresh(student)
 		return student
 
 
