@@ -64,9 +64,9 @@ class EnrollmentHandler:
 	async def get_all(
 		self,
 		student_id: Optional[UUID], 
-		level: Optional[int], 
-		semester: Optional[int],
-		course_id: Optional[int],
+		level: Optional[int] = None, 
+		semester: Optional[int] = None,
+		course_id: Optional[int] = None,
 		only_passed: bool = False,
 		excuse: bool = True,
 	):
@@ -129,7 +129,7 @@ class EnrollmentHandler:
 			student.registered_hours += course.credit_hours
 		#   check if passed course
 		elif enrollment.grade in ['A', 'B', 'C', 'D']:
-			enrollments = await self.get_all(student.id, None, None, course.id)
+			enrollments = await self.get_all(student_id=student.id, course_id=course.id)
 			count = len(enrollments) + 1
 			if count > 2:
 				student.excluded_hours += (count - 2) * course.credit_hours
@@ -152,8 +152,8 @@ class EnrollmentHandler:
 		self,
 		headers: dict, 
 		enrollment: dict, 
-		student: Student, 
-		course: Course,
+		student_id: UUID, 
+		course_id: int,
 	):
 		#	check if enrollment exists
 		query = (
@@ -166,8 +166,8 @@ class EnrollmentHandler:
 					self.model.year==headers.get('year'),
 					self.model.month==headers.get('month'),
 					self.model.mark==enrollment.get('mark'),
-					self.model.student_id==student.id,
-					self.model.course_id==course.id,
+					self.model.student_id==student_id,
+					self.model.course_id==course_id,
 				)
 			)
 		)
@@ -187,8 +187,8 @@ class EnrollmentHandler:
 				'full_mark': enrollment['full_mark'],
 				'grade': enrollment['grade'],
 				'points': float(enrollment['points']),
-				'student_id': student.id,
-				'course_id': course.id,
+				'student_id': student_id,
+				'course_id': course_id,
 			}
 		)
 		return new_enrollment
