@@ -1,24 +1,33 @@
 from typing import Annotated 
-from fastapi import Depends, status, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
-from sqlalchemy.orm import selectinload
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from exceptions import UnAuthorizedException
+from generics.exceptions import UnAuthorizedException
 from config import settings
 from database import get_async_db
-from models.user import User
-from models.token import Token
-from schemas.authentication import TokenPayload, Login
+from user.models import User
+
+from .models import Token
+from .schemas import TokenPayload, Login
 
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
 
 
+def create_access_token(payload: dict):
+	data = payload.copy()
+
+	token = jwt.encode(
+		data,
+		settings.SECRET_KEY,
+		algorithm=settings.TOKEN_ENCODING_ALGORITHM,
+	)
+	return token
 
 
 class TokenHandler:

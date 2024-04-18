@@ -4,9 +4,8 @@ from fastapi.testclient import TestClient
 
 from main import app
 from authentication.oauth2 import create_access_token
-from models import Base
+from config import Base
 from database import test_engine, get_test_db, get_async_db
-
 
 
 @pytest.fixture(scope='function')
