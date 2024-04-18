@@ -1,5 +1,8 @@
 from pydantic_settings import BaseSettings
 from importlib import import_module
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 class Settings(BaseSettings):
 
@@ -37,16 +40,25 @@ settings = Settings()
 
 
 def get_base():
-	models = []
-	for app in settings.APPS:
-		try:
-			module = import_module(f'{app}.models')
-		except: 
-			continue
-		if getattr(module, 'Base', None) == None:
-			continue
-		models.append(getattr(module, 'Base', None))
-	return models[-1]
+    models = []
+    for app in settings.APPS:
+        try:
+            module = import_module(f'{app}.models')
+            logging.info(f'Successfully imported {app}.models')
+        except Exception as e:
+            logging.warning(f'Failed to import {app}.models: {e}')
+            continue
+        base = getattr(module, 'Base', None)
+        if base is not None:
+            models.append(base)
+        else:
+            logging.info(f'No Base in {app}.models')
+
+    if not models:
+        logging.error('No models found with a Base class.')
+        return None
+
+    return models[-1]
 
 
 Base = get_base()
