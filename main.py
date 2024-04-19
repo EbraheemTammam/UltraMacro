@@ -26,30 +26,30 @@ app.add_middleware(
 )
 
 
-from database.async_client import AsyncSessionLocal 
-from user.handler import UserHandler
-from user.schemas import UserCreate
+# from database.async_client import AsyncSessionLocal 
+# from user.handler import UserHandler
+# from user.schemas import UserCreate
 
-@app.on_event('startup')
-async def startup_event():
-	async with AsyncSessionLocal() as db:
-		handler = UserHandler(db)
-		try:
-			await handler.create(
-				UserCreate(
-					**{
-						'first_name': settings.ROOT_USER_FIRST_NAME,
-						'last_name': settings.ROOT_USER_LAST_NAME,
-						'email': settings.ROOT_USER_EMAIL,
-						'password': settings.ROOT_USER_PASSWORD,
-						'is_admin': True,
-						'divisions': []
-					}
-				)
-			)
-		except:
-			return {'detail': 'root user already exists'}		
-	return {'detail': 'root user created'}
+# @app.on_event('startup')
+# async def startup_event():
+# 	async with AsyncSessionLocal() as db:
+# 		handler = UserHandler(db)
+# 		try:
+# 			await handler.create(
+# 				UserCreate(
+# 					**{
+# 						'first_name': settings.ROOT_USER_FIRST_NAME,
+# 						'last_name': settings.ROOT_USER_LAST_NAME,
+# 						'email': settings.ROOT_USER_EMAIL,
+# 						'password': settings.ROOT_USER_PASSWORD,
+# 						'is_admin': True,
+# 						'divisions': []
+# 					}
+# 				)
+# 			)
+# 		except:
+# 			return {'detail': 'root user already exists'}		
+# 	return {'detail': 'root user created'}
 
 
 
