@@ -1,7 +1,7 @@
 from threading import Thread
 import asyncio
 
-from fastapi import UploadFile, File
+from fastapi import UploadFile
 
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +25,7 @@ from user.models import User
 class UploadHandler:
 
 
-	def __init__(self, user: User, db: AsyncSession, file: UploadFile = File(...)) -> None:
+	def __init__(self, user: User, db: AsyncSession, file: UploadFile) -> None:
 		self.file = file
 		self.user = user
 		self.db = db
