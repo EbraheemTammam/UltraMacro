@@ -1,3 +1,4 @@
+from pydantic import EmailStr
 from pydantic_settings import BaseSettings
 from importlib import import_module
 import logging
@@ -30,6 +31,12 @@ class Settings(BaseSettings):
 		'enrollment',
 		'upload',
 	]
+     
+	#	root user data
+	ROOT_USER_FIRST_NAME: str
+	ROOT_USER_LAST_NAME: str
+	ROOT_USER_EMAIL: EmailStr
+	ROOT_USER_PASSWORD: str
 
 	class Config:
 		env_file = '.env'
