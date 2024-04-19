@@ -19,8 +19,7 @@ from .models import User
 
 class UserHandler:
 
-	def __init__(self, user: User, db: AsyncSession) -> None:
-		self.user = user
+	def __init__(self, db: AsyncSession) -> None:
 		self.db = db
 		self.token_handler = TokenHandler(db)
 		self.NotFoundException = UserNotFoundException()

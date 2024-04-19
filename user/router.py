@@ -31,7 +31,7 @@ async def get_users(
 	permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
-	handler = UserHandler(permission_class.user, db)
+	handler = UserHandler(db)
 	return await handler.get_all()
 
 
@@ -46,7 +46,7 @@ async def create_users(
 	permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
-	handler = UserHandler(permission_class.user, db)
+	handler = UserHandler(db)
 	return await handler.create(user)
 
 
@@ -61,7 +61,7 @@ async def retrieve_users(
 	permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
-	handler = UserHandler(permission_class.user, db)
+	handler = UserHandler(db)
 	return await handler.get_one(id)
 
 
@@ -76,7 +76,7 @@ async def update_users(
 	permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
-	handler = UserHandler(permission_class.user, db)
+	handler = UserHandler(db)
 	return await handler.update(id, user)
 
 
@@ -90,6 +90,6 @@ async def delete_users(
 	permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
-	handler = UserHandler(permission_class.user, db)
+	handler = UserHandler(db)
 	await handler.get_one(id)
 	return await handler.delete(id)
