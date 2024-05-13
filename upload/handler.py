@@ -17,7 +17,8 @@ from division.handler import DivisionHandler
 from student.handler import StudentHandler
 from course.handler import CourseHandler
 from enrollment.handler import EnrollmentHandler
-from regulation.models import Regulation
+from regulation.handler import RegulationHandler
+from regulation.schemas import RegulationCreate
 from user.models import User
 
 
@@ -29,6 +30,7 @@ class UploadHandler:
 		self.file = file
 		self.user = user
 		self.db = db
+		self.regulation_handler = RegulationHandler(user, db)
 		self.department_handler = DepartmentHandler(user, db)
 		self.division_handler = DivisionHandler(user, db)
 		self.student_handler = StudentHandler(user, db)
@@ -40,13 +42,17 @@ class UploadHandler:
 		content = await self.file.read()
 		data = await xl_handler.extract_divisions(content)
 		for d in data:
-			d['regulation_id'] = regulation_id
-			# if bool(d['private']):
-			# 	r = Regulation(name=f"لائحة برنامج {d['name']}", max_gpa=5)
-			# 	self.db.add(r)
-			# 	await self.db.commit()
-			# 	await self.db.refresh(r)
-			# 	d['regulation_id'] = r.id
+			if bool(d['private']):
+				regulation = self.regulation_handler.get_by_name(f'لائحة برنامج {d['name'].strip()}')
+				if not regulation:
+					regulation = self.regulation_handler.create(
+						RegulationCreate(
+							**{'name': f'لائحة برنامج {d['name'].strip()}', 'max_gpa': 4}
+						)
+					)
+				d['regulation_id'] = regulation.id
+			else:
+				d['regulation_id'] = regulation_id
 			try:
 				d1 = await self.department_handler.get_by_name(d['department_1_id'])
 				d['department_1_id'] = d1.id
