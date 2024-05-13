@@ -87,10 +87,10 @@ class UploadHandler:
 	async def enrollment_upload(self):
 
 		content = await self.file.read()
-		logging.info(f'file {self.file} opened')
+		logging.info(f'file {self.file.filename} opened')
 
 		data = await xl_handler.final_dict(content)
-		logging.info(f'data from file {self.file} extracted')
+		logging.info(f'data from file {self.file.filename} extracted')
 		
 		division = await self.division_handler.get_by_name(data['headers']['division'])
 
@@ -127,5 +127,5 @@ class UploadHandler:
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
 		
 		await self.db.commit()
-		logging.info(f'data from file {self.file} processed successfully')
+		logging.info(f'data from file {self.file.filename} processed successfully')
 		return response
