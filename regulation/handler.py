@@ -50,6 +50,13 @@ class RegulationHandler:
         if regulation:
             return regulation
         raise self.NotFoundException
+    
+
+    async def get_by_name(self, name: str):
+        regulation = await self.db.execute(
+            select(Regulation).where(Regulation.name==name)
+        )
+        return regulation.scalar()
 
 
     async def update(self, id: int, regulation: RegulationCreate):
