@@ -21,6 +21,9 @@ from regulation.handler import RegulationHandler
 from regulation.schemas import RegulationCreate
 from user.models import User
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 class UploadHandler:
@@ -82,12 +85,19 @@ class UploadHandler:
 
 
 	async def enrollment_upload(self):
+
 		content = await self.file.read()
+		logging.info(f'file {self.file} opened')
+
 		data = await xl_handler.final_dict(content)
+		logging.info(f'data from file {self.file} extracted')
+		
 		division = await self.division_handler.get_by_name(data['headers']['division'])
+
 		response = []
 		courses = dict()
 		student = None
+
 		for d in data['content']:
 			#	if new student
 			if not student or student.name != d['student']:
@@ -115,5 +125,7 @@ class UploadHandler:
 			self.db.add(enrollment)
 			student = await self.enrollment_handler.post_create(enrollment, student, course)
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
+		
 		await self.db.commit()
+		logging.info(f'data from file {self.file} processed successfully')
 		return response
