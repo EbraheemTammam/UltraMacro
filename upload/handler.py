@@ -43,11 +43,11 @@ class UploadHandler:
 		data = await xl_handler.extract_divisions(content)
 		for d in data:
 			if bool(d['private']):
-				regulation = self.regulation_handler.get_by_name(f'لائحة برنامج {d['name'].strip()}')
+				regulation = self.regulation_handler.get_by_name(f"لائحة برنامج {d['name'].strip()}")
 				if not regulation:
 					regulation = self.regulation_handler.create(
 						RegulationCreate(
-							**{'name': f'لائحة برنامج {d['name'].strip()}', 'max_gpa': 4}
+							**{'name': f"لائحة برنامج {d['name'].strip()}", 'max_gpa': 4}
 						)
 					)
 				d['regulation_id'] = regulation.id
