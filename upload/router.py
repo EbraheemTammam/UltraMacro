@@ -6,7 +6,8 @@ from fastapi import (
 	Query,
     File, 
     UploadFile,
-    status
+    status,
+    BackgroundTasks
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_async_db
@@ -59,7 +60,8 @@ async def upload_courses(
 async def upload_enrollments(
     permission_class: Annotated[AdminPermission, Depends(AdminPermission)], 
     db: Annotated[AsyncSession, Depends(get_async_db)],
-    file: Annotated[UploadFile, File(...)]
+    file: Annotated[UploadFile, File(...)],
+    background_tasks: BackgroundTasks
 ):
-    handler = UploadHandler(permission_class.user, db, file)
+    handler = UploadHandler(permission_class.user, db, file, background_tasks)
     return await handler.enrollment_upload()

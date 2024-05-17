@@ -1,8 +1,4 @@
-from threading import Thread
-import asyncio
-
-from fastapi import UploadFile
-
+from fastapi import UploadFile, BackgroundTasks
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,18 +17,18 @@ from regulation.handler import RegulationHandler
 from regulation.schemas import RegulationCreate
 from user.models import User
 
-import logging
+from config import logging
 
-logging.basicConfig(level=logging.INFO)
 
 
 class UploadHandler:
 
 
-	def __init__(self, user: User, db: AsyncSession, file: UploadFile) -> None:
+	def __init__(self, user: User, db: AsyncSession, file: UploadFile, background_tasks: BackgroundTasks) -> None:
 		self.file = file
 		self.user = user
 		self.db = db
+		self.background_tasks = background_tasks
 		self.regulation_handler = RegulationHandler(user, db)
 		self.department_handler = DepartmentHandler(user, db)
 		self.division_handler = DivisionHandler(user, db)
@@ -103,7 +99,7 @@ class UploadHandler:
 			if not student or student.name != d['student']:
 				#	if exists execute post_add_enrollment
 				if student:
-					await self.student_handler.post_add_enrollment(student)
+					self.background_tasks.add_task(self.student_handler.post_add_enrollment, student)
 				#	get the new student
 				student = await self.student_handler.get_by_name_and_division(d['student'], division)
 				if not student:
@@ -123,7 +119,7 @@ class UploadHandler:
 				response.append({'student': student.name, 'course': course.name, 'status': 'enrollment already exists'})
 				continue
 			self.db.add(enrollment)
-			student = await self.enrollment_handler.post_create(enrollment, student, course)
+			self.background_tasks.add_task(self.enrollment_handler.post_create, enrollment, student, course)
 			response.append({'student': student.name, 'course': course.name, 'status': 'successfully added'})
 		
 		await self.db.commit()
