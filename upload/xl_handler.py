@@ -1,5 +1,5 @@
 import pandas as pd
-
+from io import BytesIO
 
 
 
@@ -56,12 +56,12 @@ async def get_header_data(df: pd.DataFrame) -> pd.DataFrame:
         division = division[-1] if len(division) < 4 else '/'.join(division[-2:])
     return {
         'regulation': regulation,
-        'year': year,
-        'level': level,
-        'semester': semester,
-        'month': month,
+        'year'      : year,
+        'level'     : int(level),
+        'semester'  : int(semester),
+        'month'     : month,
         'department': DEPARTMENTS[department],
-        'division': division.replace(
+        'division'  : division.replace(
             '-', '/', 1
             ).replace(
             'ه', 'ة', 1
@@ -99,26 +99,27 @@ async def reform(df : pd.DataFrame) -> list:
                 continue
             reformed.append(
                 {
-                    'seat_id': int(df.iloc[r, -1]), 
-                    'student': df.iloc[r, -2], 
-                    'course': df.iloc[r, c].replace(')', '', 1).replace('(', '', 1),
-                    'code': df.iloc[r + 1, c][1: -1].upper().replace(' ', ''),
-                    'hours': df.iloc[r + 2, c].split()[2], 
-                    'grade': df.iloc[r + 3, c], 
-                    'points': df.iloc[r + 3, c + 1], 
-                    'mark': df.iloc[r + 3, c + 2],
-                    'full_mark': df.iloc[r + 2, c].split()[0]
+                    'seat_id'  : int(df.iloc[r, -1]), 
+                    'student'  : df.iloc[r, -2], 
+                    'course'   : df.iloc[r, c].replace(')', '', 1).replace('(', '', 1),
+                    'code'     : df.iloc[r + 1, c][1: -1].upper().replace(' ', ''),
+                    'hours'    : int(df.iloc[r + 2, c].split()[2]), 
+                    'grade'    : df.iloc[r + 3, c], 
+                    'points'   : float(df.iloc[r + 3, c + 1]), 
+                    'mark'     : df.iloc[r + 3, c + 2],
+                    'full_mark': int(df.iloc[r + 2, c].split()[0])
                 }
             )    
             if reformed[-1]['mark'] in ['راسب', 'غـ', 'حر', 'رل']: reformed[-1]['mark'] = -1.0
             elif reformed[-1]['mark'] in ['ناجح', 'عذر']: reformed[-1]['mark'] = 0.0
+            reformed[-1]['mark'] = float(reformed[-1]['mark'])
             c += 3
         r += 4
     return reformed
 
 #   final dictionary
 async def final_dict(file):
-    xl_file = pd.ExcelFile(file)
+    xl_file = pd.ExcelFile(BytesIO(file))
     whole = []
     sheets = xl_file.sheet_names
     for sheet in sheets:
