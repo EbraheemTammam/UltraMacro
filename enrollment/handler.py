@@ -1,8 +1,8 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, and_, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
@@ -131,7 +131,11 @@ class EnrollmentHandler:
 			student.passed_hours += course.credit_hours
 			student.total_points += enrollment.points * course.credit_hours
 			student.total_mark += (enrollments[0].mark + enrollments[-1].mark) / 2 if enrollments else enrollment.mark
-		return student
+		
+		self.db.add(student)
+		await self.db.commit()
+		
+		return 
 
 
 	async def get_one(self, id: UUID):
@@ -153,14 +157,14 @@ class EnrollmentHandler:
 			select(Enrollment).
 			where(
 				and_(
-					Enrollment.seat_id==enrollment.get('seat_id'),
-					Enrollment.level==headers.get('level') if headers.get('level') else -1,
-					Enrollment.semester==headers.get('semester'),
-					Enrollment.year==headers.get('year'),
-					Enrollment.month==headers.get('month'),
-					Enrollment.mark==enrollment.get('mark'),
-					Enrollment.student_id==student_id,
-					Enrollment.course_id==course_id,
+					Enrollment.seat_id    == int(enrollment.get('seat_id')),
+					Enrollment.level      == int(headers.get('level')) if headers.get('level') else -1,
+					Enrollment.semester   == int(headers.get('semester')),
+					Enrollment.year       == str(headers.get('year')),
+					Enrollment.month      == str(headers.get('month')),
+					Enrollment.mark       == float(enrollment.get('mark')),
+					Enrollment.student_id == student_id,
+					Enrollment.course_id  == course_id,
 				)
 			)
 		)
@@ -171,17 +175,17 @@ class EnrollmentHandler:
 		#	if not, create one
 		new_enrollment = Enrollment(
 			**{
-				'seat_id': enrollment['seat_id'],
-				'level': headers['level'] if headers.get('level') else -1,
-				'semester': headers['semester'],
-				'year': headers['year'],
-				'month': headers['month'],
-				'mark': float(enrollment['mark']),
-				'full_mark': enrollment['full_mark'],
-				'grade': enrollment['grade'],
-				'points': float(enrollment['points']),
+				'seat_id'   : int(enrollment['seat_id']),
+				'level'     : int(headers['level']) if headers.get('level') else -1,
+				'semester'  :  int(headers['semester']),
+				'year'      : headers['year'],
+				'month'     : headers['month'],
+				'mark'      : float(enrollment['mark']),
+				'full_mark' : int(enrollment['full_mark']),
+				'grade'     :  enrollment['grade'],
+				'points'    : float(enrollment['points']),
 				'student_id': student_id,
-				'course_id': course_id,
+				'course_id' : course_id,
 			}
 		)
 		return new_enrollment
