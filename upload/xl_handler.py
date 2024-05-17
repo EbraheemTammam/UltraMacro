@@ -57,7 +57,7 @@ async def get_header_data(df: pd.DataFrame) -> pd.DataFrame:
     return {
         'regulation': regulation,
         'year'      : year,
-        'level'     : int(level),
+        'level'     : int(level) if level else None,
         'semester'  : int(semester),
         'month'     : month,
         'department': DEPARTMENTS[department],

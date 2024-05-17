@@ -153,12 +153,13 @@ class EnrollmentHandler:
 		course_id: int,
 	):
 		#	check if enrollment exists
+		level = int(headers.get('level')) if headers.get('level') else -1
 		query = (
 			select(Enrollment).
 			where(
 				and_(
 					Enrollment.seat_id    == int(enrollment.get('seat_id')),
-					Enrollment.level      == int(headers.get('level')) if headers.get('level') else -1,
+					Enrollment.level      == level,
 					Enrollment.semester   == int(headers.get('semester')),
 					Enrollment.year       == str(headers.get('year')),
 					Enrollment.month      == str(headers.get('month')),
