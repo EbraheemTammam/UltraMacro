@@ -23,12 +23,6 @@ class CourseUploadResponse(BaseModel):
 
 
 class EnrollmentUploadResponse(BaseModel):
-    seat_id: int
     student: str
     course: str
-    code: str
-    hours: int
-    grade: str
-    points: float
-    mark: float
-    full_mark: int
+    status: str
