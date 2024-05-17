@@ -25,7 +25,7 @@ class Enrollment(Base):
 	seat_id = Column(Integer, nullable=False)
 	level = Column(Integer)
 	semester = Column(Integer)
-	year = Column(Integer, nullable=False)
+	year = Column(String(4), nullable=False)
 	month = Column(String(10), nullable=False)
 	points = Column(Float, nullable=False)
 	mark = Column(Float, nullable=False)
