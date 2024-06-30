@@ -25,7 +25,7 @@ def upgrade() -> None:
     sa.Column('seat_id', sa.Integer(), nullable=False),
     sa.Column('level', sa.Integer()),
     sa.Column('semester', sa.Integer()),
-    sa.Column('year', sa.Integer(), nullable=False),
+    sa.Column('year', sa.String(length=4), nullable=False),
     sa.Column('month', sa.String(length=10), nullable=False),
     sa.Column('points', sa.Float(), nullable=False),
     sa.Column('mark', sa.Float(), nullable=False),
