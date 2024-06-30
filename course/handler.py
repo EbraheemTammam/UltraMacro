@@ -111,25 +111,24 @@ class CourseHandler:
     
 
     async def check_required_and_not_passed(self, division_id: int, passed_enrollments: List[Enrollment]):
-        passed_courses_query = await self.db.execute(
-			select(Course.id).
-			where(
-				Course.id.in_([e.course_id for e in passed_enrollments])
-			)
-		)
-        passed_courses = passed_courses_query.scalars().all()
-        required_courses = await self.db.execute(
-			select(Course).
-			where(
-				and_(
-					Course.required==True,
-					Course.divisions.any(id=division_id)
-				)
-			).
-			except_(Course.id.in_(passed_courses)).
-            exists()
-		)
-        return required_courses
+        passed_course_ids = [e.course_id for e in passed_enrollments]
+        
+        # Query to get required courses for the given division
+        required_courses_query = await self.db.execute(
+            select(Course.id).where(
+                and_(
+                    Course.required == True,
+                    Course.divisions.any(id=division_id)
+                )
+            )
+        )
+        required_course_ids = required_courses_query.scalars().all()
+
+        # Find the required courses that are not passed
+        not_passed_courses = [course_id for course_id in required_course_ids if course_id not in passed_course_ids]
+
+        # Check if there are any required courses that are not passed
+        return bool(not_passed_courses)
 
 
     async def update(self, id: int, course: CourseCreate):
