@@ -31,9 +31,10 @@ async def upload_divisions(
     permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
     db: Annotated[AsyncSession, Depends(get_async_db)],
     regulation: Annotated[int, Query(title='id of regulation')],
-    file: Annotated[UploadFile, File(...)]
+    file: Annotated[UploadFile, File(...)],
+    background_tasks: BackgroundTasks
 ):
-    handler = UploadHandler(permission_class.user, db, file)
+    handler = UploadHandler(permission_class.user, db, file, background_tasks)
     return await handler.division_upload(regulation)
 
 
@@ -45,10 +46,11 @@ async def upload_divisions(
 async def upload_courses(
     permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
     db: Annotated[AsyncSession, Depends(get_async_db)],
-    regulation: Annotated[int, Query(title='id of regulation')],
-    file: Annotated[UploadFile, File(...)]
+    #regulation: Annotated[int, Query(title='id of regulation')],
+    file: Annotated[UploadFile, File(...)],
+    background_tasks: BackgroundTasks
 ):
-    handler = UploadHandler(permission_class.user, db, file)
+    handler = UploadHandler(permission_class.user, db, file, background_tasks)
     return await handler.course_upload()
 
 
