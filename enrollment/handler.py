@@ -115,7 +115,7 @@ class EnrollmentHandler:
 	
 
 	async def post_create(self, enrollment: Enrollment, student: Student, course: Course):
-		if course.credit_hours == 0: return student
+		if course.credit_hours == 0: return
 		#   check if research
 		if enrollment.grade == 'بح' and enrollment.mark == 0:
 			student.research_hours += course.credit_hours
@@ -123,8 +123,8 @@ class EnrollmentHandler:
 			student.registered_hours += course.credit_hours
 		#   check if passed course
 		elif enrollment.grade in ['A', 'B', 'C', 'D']:
-			enrollments = await self.get_all(student_id=student.id, course_id=course.id)
-			count = len(enrollments) + 1
+			enrollments = await self.get_all(student_id=student.id, course_id=course.id, excuse=False)
+			count = len(enrollments)
 			if count > 2:
 				student.excluded_hours += (count - 2) * course.credit_hours
 			student.registered_hours += count * course.credit_hours
