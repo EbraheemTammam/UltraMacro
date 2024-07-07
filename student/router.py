@@ -10,7 +10,7 @@ from fastapi import (
 
 from generics.permissions import StudentPermission
 
-from .schemas import StudentCreate, StudentDetail, Student
+from .schemas import StudentCreate, StudentDetail, Student, GrduateStudent
 from .handler import StudentHandler
 
 student_router = APIRouter()
@@ -31,7 +31,7 @@ async def get_students(
 #	get all graduate students
 @student_router.get(
 	'/graduates',
-    response_model=List[Student],
+    response_model=List[GrduateStudent],
     status_code=status.HTTP_200_OK
 )
 async def get_graduate_students(
@@ -39,7 +39,8 @@ async def get_graduate_students(
 	regulation: int = Query(None, title='id of regulation to filter result')
 ):
 	handler = StudentHandler(permission_class.user, permission_class.db)
-	return await handler.get_all(regulation_id=regulation, graduate=True)
+	students = await handler.get_all(regulation_id=regulation, graduate=True)
+	return [{**s.__dict__, 'month': await handler.get_graduation_month(s.id), 'year': await handler.get_graduation_year(s.id)} for s in students]
 
 
 #	create student
