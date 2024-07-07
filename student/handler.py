@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import or_, and_, func
+from sqlalchemy import or_, and_, func, desc
 from sqlalchemy.future import select
 from sqlalchemy import insert, update, delete
 from sqlalchemy.orm import selectinload
@@ -197,7 +197,22 @@ class StudentHandler:
 		)
 		await self.db.commit()
 		return
-	
+
+	async def get_graduation_year(self, id: UUID):
+		query = await self.db.execute(
+		    select(Enrollment.year).
+			where(Enrollment.student_id == id).
+			order_by(desc(Enrollment.year), desc(Enrollment.semester))
+		)
+		return query.first()[0]
+
+	async def get_graduation_month(self, id: UUID):
+		query = await self.db.execute(
+		    select(Enrollment.month).
+			where(Enrollment.student_id == id).
+			order_by(desc(Enrollment.year), desc(Enrollment.semester))
+		)
+		return query.first()[0]
 
 	async def get_semester_detail(
 		self,
