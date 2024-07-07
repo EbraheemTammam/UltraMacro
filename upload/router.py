@@ -46,7 +46,7 @@ async def upload_divisions(
 async def upload_courses(
     permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
     db: Annotated[AsyncSession, Depends(get_async_db)],
-    #regulation: Annotated[int, Query(title='id of regulation')],
+    regulation: Annotated[int, Query(title='id of regulation')],
     file: Annotated[UploadFile, File(...)],
     background_tasks: BackgroundTasks
 ):
