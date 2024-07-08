@@ -43,7 +43,7 @@ async def get_users(
 )
 async def create_users(
 	user: UserCreate,
-	#permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
+	permission_class: Annotated[AdminPermission, Depends(AdminPermission)],
 	db: Annotated[AsyncSession, Depends(get_async_db)]
 ):
 	handler = UserHandler(db)
