@@ -206,9 +206,9 @@ class StudentHandler:
 		)
 		return query.first()[0]
 
-	async def get_graduation_month(self, id: UUID):
+	async def get_graduation_semester(self, id: UUID):
 		query = await self.db.execute(
-		    select(Enrollment.month).
+		    select(Enrollment.semester).
 			where(Enrollment.student_id == id).
 			order_by(desc(Enrollment.year), desc(Enrollment.semester))
 		)

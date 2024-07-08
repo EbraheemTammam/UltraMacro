@@ -40,7 +40,7 @@ class Student(StudentBase):
         from_attributes = True
 
 class GrduateStudent(Student):
-    month: str
+    semester: int
     year: str
 
 

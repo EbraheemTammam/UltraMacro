@@ -40,7 +40,7 @@ async def get_graduate_students(
 ):
 	handler = StudentHandler(permission_class.user, permission_class.db)
 	students = await handler.get_all(regulation_id=regulation, graduate=True)
-	return [{**s.__dict__, 'month': await handler.get_graduation_month(s.id), 'year': await handler.get_graduation_year(s.id)} for s in students]
+	return [{**s.__dict__, 'semester': await handler.get_graduation_semester(s.id), 'year': await handler.get_graduation_year(s.id)} for s in students]
 
 
 #	create student
