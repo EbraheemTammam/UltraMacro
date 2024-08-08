@@ -1,4 +1,4 @@
-# GPAXL
+# Ultra Macro
 Educational Management System with some data engineering features
 
 
